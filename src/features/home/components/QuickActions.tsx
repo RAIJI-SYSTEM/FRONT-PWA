@@ -26,7 +26,8 @@ export default function QuickActions() {
     <Box
       component="section"
       aria-label="Ações rápidas"
-      sx={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: { xs: 1.5, sm: 2 } }}
+      // Quebra para a próxima linha quando os botões não cabem lado a lado
+      sx={{ display: 'flex', flexWrap: 'wrap', gap: { xs: 1.5, sm: 2 } }}
     >
       {actions.map(({ label, description, href, icon: Icon, highlighted }) => (
         <ButtonBase
@@ -34,13 +35,13 @@ export default function QuickActions() {
           component={Link}
           href={href}
           sx={{
-            flexDirection: 'column',
-            alignItems: 'flex-start',
-            justifyContent: 'space-between',
-            gap: 2,
-            p: { xs: 1.5, sm: 2.5 },
-            minHeight: { xs: 112, sm: 136 },
-            borderRadius: 5,
+            flex: '1 1 220px',
+            justifyContent: 'flex-start',
+            gap: 1.5,
+            px: 2,
+            py: 1.5,
+            minHeight: 72,
+            borderRadius: 3,
             textAlign: 'left',
             border: 1,
             borderColor: highlighted ? 'transparent' : 'divider',
@@ -54,9 +55,10 @@ export default function QuickActions() {
         >
           <Box
             sx={{
-              width: { xs: 40, sm: 48 },
-              height: { xs: 40, sm: 48 },
-              borderRadius: '50%',
+              flexShrink: 0,
+              width: 44,
+              height: 44,
+              borderRadius: 2,
               display: 'grid',
               placeItems: 'center',
               color: highlighted ? 'primary.main' : 'primary.contrastText',
@@ -66,14 +68,13 @@ export default function QuickActions() {
             <Icon size={20} />
           </Box>
           <Box>
-            <Typography sx={{ fontWeight: 600, lineHeight: 1.2, fontSize: { xs: '0.9375rem', sm: '1.0625rem' } }}>
+            <Typography sx={{ fontWeight: 600, lineHeight: 1.2 }}>
               {label}
             </Typography>
             <Typography
               variant="body2"
               sx={{
-                display: { xs: 'none', sm: 'block' },
-                mt: 0.5,
+                mt: 0.25,
                 color: highlighted ? 'inherit' : 'text.secondary',
                 opacity: highlighted ? 0.85 : 1,
               }}
