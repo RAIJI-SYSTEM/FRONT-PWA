@@ -3,11 +3,10 @@
 import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import Box from '@mui/material/Box';
-import ButtonBase from '@mui/material/ButtonBase';
+import BottomNavigation from '@mui/material/BottomNavigation';
+import BottomNavigationAction from '@mui/material/BottomNavigationAction';
 import Paper from '@mui/material/Paper';
-import Typography from '@mui/material/Typography';
-import { CarIcon, DocumentIcon, HomeIcon, PersonIcon } from './icons';
+import { History, House, User, Wallet } from 'lucide-react';
 
 export interface FooterItem {
   label: string;
@@ -16,10 +15,10 @@ export interface FooterItem {
 }
 
 const defaultItems: FooterItem[] = [
-  { label: 'Início', href: '/', icon: <HomeIcon /> },
-  { label: 'Extrato', href: '/extrato', icon: <DocumentIcon /> },
-  { label: 'Viagens', href: '/viagens', icon: <CarIcon /> },
-  { label: 'Perfil', href: '/perfil', icon: <PersonIcon /> },
+  { label: 'Início', href: '/homepage', icon: <House size={22} /> },
+  { label: 'Histórico', href: '/historico', icon: <History size={22} /> },
+  { label: 'Carteira', href: '/carteira', icon: <Wallet size={22} /> },
+  { label: 'Perfil', href: '/perfil', icon: <User size={22} /> },
 ];
 
 export interface FooterProps {
@@ -28,80 +27,48 @@ export interface FooterProps {
 
 export default function Footer({ items = defaultItems }: FooterProps) {
   const pathname = usePathname();
-
-  const isActive = (href: string) =>
-    href === '/' ? pathname === '/' : pathname === href || pathname.startsWith(`${href}/`);
+  const activeHref = items.find((item) => pathname === item.href || pathname.startsWith(`${item.href}/`))?.href;
 
   return (
-    <Box
+    <Paper
       component="nav"
       aria-label="Navegação principal"
+      elevation={8}
       sx={{
         position: 'fixed',
         left: 0,
         right: 0,
-        bottom: 0,
+        bottom: { xs: 0, sm: 16 },
+        mx: 'auto',
+        width: { xs: '100%', sm: 'calc(100% - 48px)' },
+        maxWidth: { sm: 852 }, // largura do Container "md" menos o gutter
         zIndex: 'appBar',
-        display: 'flex',
-        justifyContent: 'center',
-        px: 2,
-        pb: 'calc(16px + env(safe-area-inset-bottom))',
-        pointerEvents: 'none',
+        overflow: 'hidden',
+        borderRadius: { xs: '24px 24px 0 0', sm: 6 },
+        pb: { xs: 'env(safe-area-inset-bottom)', sm: 0 },
       }}
     >
-      <Paper
-        elevation={6}
-        sx={{
-          pointerEvents: 'auto',
-          display: 'flex',
-          alignItems: 'center',
-          gap: { xs: 1, sm: 1.5 },
-          p: { xs: 0.75, sm: 1 },
-          borderRadius: 999,
-          border: 1,
-          borderColor: 'divider',
-          maxWidth: '100%',
-        }}
-      >
-        {items.map((item) => {
-          const active = isActive(item.href);
-
-          return (
-            <ButtonBase
-              key={item.href}
-              component={Link}
-              href={item.href}
-              aria-label={item.label}
-              aria-current={active ? 'page' : undefined}
-              sx={{
-                height: { xs: 48, sm: 56 },
-                minWidth: { xs: 48, sm: 56 },
-                px: active ? { xs: 2.5, sm: 3 } : 0,
-                gap: 1,
-                borderRadius: 999,
-                border: 1,
-                borderColor: active ? 'primary.main' : 'divider',
-                bgcolor: active ? 'primary.main' : 'transparent',
-                color: active ? 'primary.contrastText' : 'text.primary',
-                transition: (theme) =>
-                  theme.transitions.create(['background-color', 'padding', 'color'], {
-                    duration: theme.transitions.duration.short,
-                  }),
-                '&:hover': {
-                  bgcolor: active ? 'primary.dark' : 'action.hover',
-                },
-              }}
-            >
-              {item.icon}
-              {active && (
-                <Typography component="span" sx={{ fontWeight: 600, fontSize: { xs: '0.875rem', sm: '1rem' } }}>
-                  {item.label}
-                </Typography>
-              )}
-            </ButtonBase>
-          );
-        })}
-      </Paper>
-    </Box>
+      <BottomNavigation showLabels value={activeHref ?? false} sx={{ height: { xs: 68, sm: 76 }, bgcolor: 'transparent' }}>
+        {items.map((item) => (
+          <BottomNavigationAction
+            key={item.href}
+            component={Link}
+            href={item.href}
+            value={item.href}
+            label={item.label}
+            icon={item.icon}
+            sx={{
+              gap: 0.5,
+              color: 'text.secondary',
+              '&.Mui-selected': { color: 'primary.main' },
+              '& .MuiBottomNavigationAction-label, & .MuiBottomNavigationAction-label.Mui-selected': {
+                fontWeight: 600,
+                fontSize: { xs: '0.75rem', sm: '0.8125rem' },
+              },
+            }}
+          />
+        ))}
+      </BottomNavigation>
+    </Paper>
   );
 }

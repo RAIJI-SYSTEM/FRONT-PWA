@@ -4,84 +4,83 @@ import AppBar from '@mui/material/AppBar';
 import Avatar from '@mui/material/Avatar';
 import Badge from '@mui/material/Badge';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import Container from '@mui/material/Container';
 import IconButton from '@mui/material/IconButton';
 import Stack from '@mui/material/Stack';
 import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
-import { NotificationsIcon, WalletIcon } from './icons';
+import { Bell, MapPin } from 'lucide-react';
 
 export interface HeaderProps {
   userName?: string;
   avatarSrc?: string;
-  balance?: number;
-  currency?: string;
+  location?: string;
   notificationsCount?: number;
-  onTopUp?: () => void;
   onNotificationsClick?: () => void;
 }
 
 export default function Header({
   userName = 'Usuário',
   avatarSrc,
-  balance = 0,
-  currency = '$',
+  location,
   notificationsCount = 0,
-  onTopUp,
   onNotificationsClick,
 }: HeaderProps) {
-  const [integer, cents] = balance.toFixed(2).split('.');
-
   return (
-    <AppBar
-      position="sticky"
-      elevation={0}
-      sx={{
-        bgcolor: 'background.default',
-        color: 'text.primary',
-        borderBottom: 1,
-        borderColor: 'divider',
-      }}
-    >
+    <AppBar position="static" elevation={0} color="transparent" sx={{ color: 'text.primary' }}>
       <Container maxWidth="md" disableGutters>
-        <Toolbar
-          sx={{
-            justifyContent: 'space-between',
-            alignItems: 'center',
-            gap: 2,
-            py: { xs: 1.5, sm: 2 },
-            px: { xs: 2, sm: 3 },
-          }}
-        >
-          <Stack direction="row" component={'div'}>
-            <Avatar src={avatarSrc} aria-label={`imagem de ${userName}`} />
-            <Stack direction="column">
-              <Typography variant='h6' component={'p'} >{userName} </Typography>
-              <Typography variant='body2' component={'p'} >{`${currency}${integer}.${cents}`} </Typography>
-            </Stack>
+        <Toolbar sx={{ justifyContent: 'space-between', gap: 2, py: { xs: 1.5, sm: 2.5 }, px: { xs: 2, sm: 3 } }}>
+          <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center', minWidth: 0 }}>
+            <Avatar
+              src={avatarSrc}
+              alt={userName}
+              sx={{
+                width: { xs: 48, sm: 56 },
+                height: { xs: 48, sm: 56 },
+                bgcolor: 'primary.main',
+                color: 'primary.contrastText',
+                border: 2,
+                borderColor: 'background.paper',
+              }}
+            >
+              {userName.charAt(0).toUpperCase()}
+            </Avatar>
+
+            <Box sx={{ minWidth: 0 }}>
+              <Typography
+                component="p"
+                noWrap
+                sx={{ fontWeight: 600, fontSize: { xs: '1.0625rem', sm: '1.25rem' }, lineHeight: 1.3 }}
+              >
+                Olá, {userName}
+              </Typography>
+              {location && (
+                <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center', color: 'text.secondary' }}>
+                  <MapPin size={14} />
+                  <Typography variant="body2" noWrap>
+                    {location}
+                  </Typography>
+                </Stack>
+              )}
+            </Box>
           </Stack>
 
-          <Stack direction="row" spacing={1}>
-            <IconButton
-              color="inherit"
-              onClick={onNotificationsClick}
-              aria-label={`Notificações (${notificationsCount})`}
-              sx={{ backgroundColor: 'orange' }}
-            >
-              <Badge badgeContent={notificationsCount} color="error">
-                <NotificationsIcon />
-              </Badge>
-            </IconButton>
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={onTopUp}
-              startIcon={<WalletIcon />}
-            >
-              Adicionar Fundos
-            </Button>
-          </Stack>
+          <IconButton
+            aria-label={`Notificações (${notificationsCount})`}
+            onClick={onNotificationsClick}
+            sx={{
+              width: { xs: 44, sm: 52 },
+              height: { xs: 44, sm: 52 },
+              bgcolor: 'background.paper',
+              color: 'text.primary',
+              boxShadow: 1,
+              '&:hover': { bgcolor: 'background.paper' },
+            }}
+          >
+            <Badge color="primary" variant="dot" invisible={notificationsCount === 0}>
+              <Bell size={20} />
+            </Badge>
+          </IconButton>
         </Toolbar>
       </Container>
     </AppBar>

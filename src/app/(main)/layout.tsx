@@ -5,10 +5,18 @@ import Footer from '@/components/Footer';
 
 export default function MainLayout({ children }: { children: React.ReactNode }) {
   return (
-    <Box sx={{ minHeight: '100dvh', bgcolor: 'background.default' }}>
-      <Header userName="Pablo" balance={100} notificationsCount={1} />
+    <Box
+      sx={{
+        minHeight: '100dvh',
+        bgcolor: 'background.default',
+        // Degradê laranja no topo, como na referência (variável CSS gerada pelo tema)
+        backgroundImage:
+          'linear-gradient(180deg, rgba(var(--mui-palette-primary-mainChannel) / 0.28) 0%, transparent 320px)',
+      }}
+    >
+      <Header userName="Pablo" location="São Paulo, SP" notificationsCount={1} />
       {/* padding inferior para o conteúdo não ficar escondido atrás do Footer fixo */}
-      <Container maxWidth="md" component="main" sx={{ py: 3, pb: { xs: 13, sm: 15 } }}>
+      <Container maxWidth="md" component="main" sx={{ px: { xs: 2, sm: 3 }, pt: 1, pb: { xs: 12, sm: 15 } }}>
         {children}
       </Container>
       <Footer />
