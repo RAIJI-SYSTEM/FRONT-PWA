@@ -1,44 +1,77 @@
 'use client';
 
-import { Children, useRef, useState, type ReactNode } from 'react';
+import { Children, useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { ChevronLeft, ChevronRight } from 'lucide-react';
 import Box from '@mui/material/Box';
 import ButtonBase from '@mui/material/ButtonBase';
+import IconButton from '@mui/material/IconButton';
 import Stack from '@mui/material/Stack';
+import Typography from '@mui/material/Typography';
+
+// Distância entre o início de um slide e o do próximo (largura + gap)
+function getStep(track: HTMLDivElement) {
+  const [first, second] = Array.from(track.children) as HTMLElement[];
+  return second ? second.offsetLeft - first.offsetLeft : track.clientWidth;
+}
+
+/**
+ * O Firefox restaura o estado "disabled" dos botões ao recarregar a página, o que gera
+ * erro de hydration (servidor manda disabled, o navegador remove). `autocomplete="off"`
+ * desliga essa restauração; vai por spread porque o tipo do React não prevê o atributo em <button>.
+ */
+const noFormStateRestore = { autoComplete: 'off' };
 
 interface CarouselProps {
   children: ReactNode;
   'aria-label': string;
 }
 
-/** Carrossel horizontal com scroll-snap (arrastar no touch) e indicadores clicáveis. */
+/**
+ * Carrossel horizontal com scroll-snap (arrastar no touch).
+ * No celular mostra um slide por vez ocupando toda a largura; no tablet, dois.
+ * A existência de mais itens é indicada pelos controles (setas, pontos e contador).
+ */
 export default function Carousel({ children, 'aria-label': ariaLabel }: CarouselProps) {
   const trackRef = useRef<HTMLDivElement>(null);
-  const [activeIndex, setActiveIndex] = useState(0);
   const slides = Children.toArray(children);
+  const [activeIndex, setActiveIndex] = useState(0);
+  // Quantidade de posições possíveis (no tablet, com 2 por vez, é menor que o nº de slides)
+  const [pageCount, setPageCount] = useState(slides.length);
 
-  const handleScroll = () => {
+  const sync = useCallback(() => {
     const track = trackRef.current;
     if (!track) return;
-    const slideWidth = track.scrollWidth / slides.length;
-    setActiveIndex(Math.round(track.scrollLeft / slideWidth));
-  };
+    const step = getStep(track);
+    setPageCount(Math.round((track.scrollWidth - track.clientWidth) / step) + 1);
+    setActiveIndex(Math.round(track.scrollLeft / step));
+  }, []);
+
+  useEffect(() => {
+    const track = trackRef.current;
+    if (!track) return;
+    // Recalcula ao redimensionar (ex.: girar o tablet). O observer já dispara uma vez ao iniciar.
+    const observer = new ResizeObserver(sync);
+    observer.observe(track);
+    return () => observer.disconnect();
+  }, [sync, slides.length]);
 
   const goTo = (index: number) => {
     const track = trackRef.current;
     if (!track) return;
-    track.scrollTo({ left: (track.scrollWidth / slides.length) * index, behavior: 'smooth' });
+    track.scrollTo({ left: getStep(track) * index, behavior: 'smooth' });
   };
+
+  const hasControls = pageCount > 1;
 
   return (
     <Box role="region" aria-roledescription="carrossel" aria-label={ariaLabel}>
       <Box
         ref={trackRef}
-        onScroll={handleScroll}
+        onScroll={sync}
         sx={{
           display: 'grid',
           gridAutoFlow: 'column',
-          // Mostra um pedaço do próximo card no celular; 2 por vez no tablet
-          gridAutoColumns: { xs: '86%', sm: 'calc(50% - 8px)' },
+          gridAutoColumns: { xs: '100%', sm: 'calc(50% - 8px)' },
           gap: 2,
           overflowX: 'auto',
           scrollSnapType: 'x mandatory',
@@ -61,23 +94,57 @@ export default function Carousel({ children, 'aria-label': ariaLabel }: Carousel
         ))}
       </Box>
 
-      {slides.length > 1 && (
-        <Stack direction="row" spacing={0.75} sx={{ justifyContent: 'center', mt: 1.5 }}>
-          {slides.map((_, index) => (
-            <ButtonBase
-              key={index}
-              aria-label={`Ir para o item ${index + 1}`}
-              aria-current={index === activeIndex}
-              onClick={() => goTo(index)}
+      {hasControls && (
+        <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between', mt: 1.5 }}>
+          <Typography variant="body2" color="text.secondary" aria-live="polite" sx={{ minWidth: 40 }}>
+            {activeIndex + 1}/{pageCount}
+          </Typography>
+
+          <Stack direction="row" spacing={0.75}>
+            {Array.from({ length: pageCount }, (_, index) => (
+              <ButtonBase
+                key={index}
+                aria-label={`Ir para o item ${index + 1}`}
+                aria-current={index === activeIndex}
+                onClick={() => goTo(index)}
+                sx={{
+                  width: index === activeIndex ? 20 : 8,
+                  height: 8,
+                  borderRadius: 999,
+                  bgcolor: index === activeIndex ? 'primary.main' : 'divider',
+                  transition: 'width 200ms, background-color 200ms',
+                }}
+              />
+            ))}
+          </Stack>
+
+          <Stack direction="row" spacing={1}>
+            <IconButton
+              size="small"
+              aria-label="Anterior"
+              {...noFormStateRestore}
+              disabled={activeIndex === 0}
+              onClick={() => goTo(activeIndex - 1)}
+              sx={{ border: 1, borderColor: 'divider' }}
+            >
+              <ChevronLeft size={18} />
+            </IconButton>
+            <IconButton
+              size="small"
+              aria-label="Próximo"
+              {...noFormStateRestore}
+              disabled={activeIndex >= pageCount - 1}
+              onClick={() => goTo(activeIndex + 1)}
               sx={{
-                width: index === activeIndex ? 20 : 8,
-                height: 8,
-                borderRadius: 999,
-                bgcolor: index === activeIndex ? 'primary.main' : 'divider',
-                transition: 'width 200ms, background-color 200ms',
+                bgcolor: 'primary.main',
+                color: 'primary.contrastText',
+                '&:hover': { bgcolor: 'primary.dark' },
+                '&.Mui-disabled': { bgcolor: 'action.disabledBackground' },
               }}
-            />
-          ))}
+            >
+              <ChevronRight size={18} />
+            </IconButton>
+          </Stack>
         </Stack>
       )}
     </Box>

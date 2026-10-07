@@ -1,6 +1,6 @@
 'use client';
 
-import { Car, Clock, Package, Truck } from 'lucide-react';
+import { Boxes, Car, CarFront, Clock, Package, Truck } from 'lucide-react';
 import Link from 'next/link';
 import Box from '@mui/material/Box';
 import Card from '@mui/material/Card';
@@ -25,10 +25,38 @@ export default function ActivityCard({ activity }: ActivityCardProps) {
   const date = isTrip ? activity.scheduledAt : activity.estimatedDelivery;
   const href = isTrip ? `/viagem/${activity.id}` : `/encomenda/${activity.id}`;
   const Icon = isTrip ? Car : Package;
+  // Ilustração de fundo para identificar o tipo à primeira vista (carro = viagem, caixas = encomenda)
+  const Illustration = isTrip ? CarFront : Boxes;
 
   return (
-    <Card variant="outlined" sx={{ height: '100%', borderRadius: 5 }}>
-      <CardActionArea component={Link} href={href} sx={{ height: '100%' }}>
+    <Card
+      variant="outlined"
+      sx={{
+        height: '100%',
+        borderRadius: 5,
+        position: 'relative',
+        overflow: 'hidden',
+        backgroundImage:
+          'linear-gradient(315deg, rgba(var(--mui-palette-primary-mainChannel) / 0.10) 0%, transparent 55%)',
+      }}
+    >
+      <Box
+        aria-hidden
+        sx={{
+          position: 'absolute',
+          right: { xs: -20, sm: -16 },
+          bottom: { xs: -24, sm: -20 },
+          color: 'primary.main',
+          opacity: 0.14,
+          transform: 'rotate(-10deg)',
+          pointerEvents: 'none',
+          '& svg': { width: { xs: 150, sm: 170 }, height: { xs: 150, sm: 170 } },
+        }}
+      >
+        <Illustration strokeWidth={1.25} />
+      </Box>
+
+      <CardActionArea component={Link} href={href} sx={{ height: '100%', position: 'relative' }}>
         <CardContent sx={{ p: 2.5, display: 'flex', flexDirection: 'column', gap: 2, height: '100%' }}>
           <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
             <Box
