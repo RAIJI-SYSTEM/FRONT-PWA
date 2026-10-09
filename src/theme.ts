@@ -75,6 +75,27 @@ const theme = createTheme({
   shape: {
     borderRadius: 12,
   },
+
+  components: {
+    MuiOutlinedInput: {
+      styleOverrides: {
+        // Fundo sólido nos campos, para o autofill ter uma cor para "imitar"
+        root: {
+          backgroundColor: 'var(--mui-palette-background-paper)',
+        },
+        // O navegador pinta o fundo dos campos preenchidos automaticamente (azul no Firefox,
+        // amarelo no Chrome). Não dá para trocar esse fundo, mas uma sombra interna cobre ele.
+        input: {
+          '&:-webkit-autofill, &:autofill': {
+            boxShadow: '0 0 0 100px var(--mui-palette-background-paper) inset',
+            WebkitTextFillColor: 'var(--mui-palette-text-primary)',
+            caretColor: 'var(--mui-palette-text-primary)',
+            borderRadius: 'inherit',
+          },
+        },
+      },
+    },
+  },
 });
 
 export default theme
