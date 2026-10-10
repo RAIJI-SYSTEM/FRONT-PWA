@@ -1,0 +1,57 @@
+'use client';
+
+import { useState } from 'react';
+import { ArrowRight } from 'lucide-react';
+import Box from '@mui/material/Box';
+import Button from '@mui/material/Button';
+import Stack from '@mui/material/Stack';
+import Typography from '@mui/material/Typography';
+import type { RideOffer } from '@/types/ride';
+import OfferCard from './OfferCard';
+
+interface OfferListProps {
+  offers: RideOffer[];
+  onContinue: (offer: RideOffer) => void;
+}
+
+/** "Escolher o melhor trajeto": as ofertas já vêm ordenadas por preço */
+export default function OfferList({ offers, onContinue }: OfferListProps) {
+  const [selectedId, setSelectedId] = useState(offers[0]?.id);
+  const selected = offers.find((offer) => offer.id === selectedId);
+  const fastestId = offers.reduce((a, b) => (b.etaMinutes < a.etaMinutes ? b : a), offers[0])?.id;
+
+  return (
+    <Stack spacing={2}>
+      <Box>
+        <Typography component="h2" variant="h6" sx={{ fontWeight: 700 }}>
+          {offers.length === 1 ? '1 motorista disponível' : `${offers.length} motoristas disponíveis`}
+        </Typography>
+        <Typography variant="body2" color="text.secondary">
+          Escolha a melhor opção para você
+        </Typography>
+      </Box>
+
+      <Stack spacing={1.5} role="radiogroup" aria-label="Motoristas disponíveis">
+        {offers.map((offer, index) => (
+          <OfferCard
+            key={offer.id}
+            offer={offer}
+            selected={offer.id === selectedId}
+            onSelect={() => setSelectedId(offer.id)}
+            highlight={index === 0 ? 'Mais barato' : offer.id === fastestId ? 'Mais rápido' : undefined}
+          />
+        ))}
+      </Stack>
+
+      <Button
+        variant="contained"
+        disabled={!selected}
+        onClick={() => selected && onContinue(selected)}
+        endIcon={<ArrowRight size={20} />}
+        sx={{ height: 56, borderRadius: 999, fontSize: '1rem', fontWeight: 600, textTransform: 'none', boxShadow: 3 }}
+      >
+        Continuar para pagamento
+      </Button>
+    </Stack>
+  );
+}

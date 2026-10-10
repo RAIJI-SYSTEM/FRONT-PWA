@@ -17,7 +17,7 @@ interface QuickAction {
 
 const actions: QuickAction[] = [
   { label: 'Viajar agora', description: 'Motorista em minutos', href: '/viagem/nova', icon: Car, highlighted: true },
-  { label: 'Agendar', description: 'Viaje mais tarde', href: '/viagem/agendar', icon: CalendarClock },
+  { label: 'Agendar', description: 'Viaje mais tarde', href: '/viagem/nova?quando=agendar', icon: CalendarClock },
   { label: 'Encomendas', description: 'Envie um pacote', href: '/encomenda/nova', icon: Package },
 ];
 
