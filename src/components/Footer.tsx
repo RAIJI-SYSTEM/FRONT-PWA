@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 import BottomNavigation from '@mui/material/BottomNavigation';
 import BottomNavigationAction from '@mui/material/BottomNavigationAction';
 import Paper from '@mui/material/Paper';
-import { History, House, User, Wallet } from 'lucide-react';
+import { Car, Ellipsis, House, Package } from 'lucide-react';
 
 export interface FooterItem {
   label: string;
@@ -16,9 +16,9 @@ export interface FooterItem {
 
 const defaultItems: FooterItem[] = [
   { label: 'Início', href: '/homepage', icon: <House size={22} /> },
-  { label: 'Histórico', href: '/historico', icon: <History size={22} /> },
-  { label: 'Carteira', href: '/carteira', icon: <Wallet size={22} /> },
-  { label: 'Perfil', href: '/perfil', icon: <User size={22} /> },
+  { label: 'Encomendas', href: '/encomendas', icon: <Package size={22} /> },
+  { label: 'Corridas', href: '/corridas', icon: <Car size={22} /> },
+  { label: 'Mais', href: '/mais', icon: <Ellipsis size={22} /> },
 ];
 
 export interface FooterProps {

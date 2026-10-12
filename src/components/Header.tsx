@@ -9,7 +9,10 @@ import IconButton from '@mui/material/IconButton';
 import Stack from '@mui/material/Stack';
 import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
-import { Bell, MapPin } from 'lucide-react';
+import { useUnreadMessages } from '@/features/messages/hooks/useUnreadMessages';
+import type { ReactNode } from 'react';
+import Link from 'next/link';
+import { Bell, MapPin, MessageCircle } from 'lucide-react';
 
 export interface HeaderProps {
   userName?: string;
@@ -17,6 +20,46 @@ export interface HeaderProps {
   location?: string;
   notificationsCount?: number;
   onNotificationsClick?: () => void;
+  /** Mensagens não lidas. Se não for passado, é consultado na API de conversas. */
+  messagesCount?: number;
+}
+
+interface HeaderIconButtonProps {
+  label: string;
+  count: number;
+  icon: ReactNode;
+  onClick?: () => void;
+  /** Se informado, o botão vira um link */
+  href?: string;
+}
+
+/** Botão redondo do topo com bolinha de "tem novidade" */
+const iconButtonSx = {
+  width: { xs: 44, sm: 52 },
+  height: { xs: 44, sm: 52 },
+  bgcolor: 'background.paper',
+  color: 'text.primary',
+  boxShadow: 1,
+  '&:hover': { bgcolor: 'background.paper' },
+};
+
+function HeaderIconButton({ label, count, icon, onClick, href }: HeaderIconButtonProps) {
+  const ariaLabel = count > 0 ? `${label} (${count} não lidas)` : label;
+  const content = (
+    <Badge color="primary" variant="dot" invisible={count === 0}>
+      {icon}
+    </Badge>
+  );
+
+  return href ? (
+    <IconButton component={Link} href={href} aria-label={ariaLabel} sx={iconButtonSx}>
+      {content}
+    </IconButton>
+  ) : (
+    <IconButton aria-label={ariaLabel} onClick={onClick} sx={iconButtonSx}>
+      {content}
+    </IconButton>
+  );
 }
 
 export default function Header({
@@ -25,7 +68,9 @@ export default function Header({
   location,
   notificationsCount = 0,
   onNotificationsClick,
+  messagesCount,
 }: HeaderProps) {
+  const unreadMessages = useUnreadMessages();
   return (
     <AppBar position="static" elevation={0} color="transparent" sx={{ color: 'text.primary' }}>
       <Container maxWidth="md" disableGutters>
@@ -65,22 +110,20 @@ export default function Header({
             </Box>
           </Stack>
 
-          <IconButton
-            aria-label={`Notificações (${notificationsCount})`}
-            onClick={onNotificationsClick}
-            sx={{
-              width: { xs: 44, sm: 52 },
-              height: { xs: 44, sm: 52 },
-              bgcolor: 'background.paper',
-              color: 'text.primary',
-              boxShadow: 1,
-              '&:hover': { bgcolor: 'background.paper' },
-            }}
-          >
-            <Badge color="primary" variant="dot" invisible={notificationsCount === 0}>
-              <Bell size={20} />
-            </Badge>
-          </IconButton>
+          <Stack direction="row" spacing={1} sx={{ flexShrink: 0 }}>
+            <HeaderIconButton
+              label="Mensagens"
+              count={messagesCount ?? unreadMessages}
+              icon={<MessageCircle size={20} />}
+              href="/mensagens"
+            />
+            <HeaderIconButton
+              label="Notificações"
+              count={notificationsCount}
+              icon={<Bell size={20} />}
+              onClick={onNotificationsClick}
+            />
+          </Stack>
         </Toolbar>
       </Container>
     </AppBar>
