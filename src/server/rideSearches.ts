@@ -10,15 +10,7 @@
  * é perdida a cada reinício.
  */
 import type { RideOffer, RideSearch, RideSearchRequest } from '@/types/ride';
-import { distanceKm } from '@/utils/geo';
-
-/** Tempo simulado até um motorista responder */
-const MATCHING_DELAY_MS = 12_000;
-/** Chance simulada de ninguém aceitar a carona */
-const NO_DRIVER_CHANCE = 0.15;
-
-const BASE_FARE_CENTS = 500;
-const PER_KM_CENTS = 210;
+import { isIntermunicipal, matchDrivers, MATCHING_DELAY_MS } from './matching';
 
 interface StoredSearch extends RideSearch {
   /** Quando a "resposta" dos motoristas fica disponível */
@@ -31,37 +23,6 @@ interface StoredSearch extends RideSearch {
 const globalStore = globalThis as unknown as { rideSearches?: Map<string, StoredSearch> };
 const searches = (globalStore.rideSearches ??= new Map());
 
-const DRIVERS: Omit<RideOffer, 'id' | 'priceCents' | 'etaMinutes'>[] = [
-  { driverName: 'Carlos Souza', driverRating: 4.9, vehicle: 'Onix prata · ABC1D23', providerType: 'mei' },
-  { driverName: 'Ana Ribeiro', driverRating: 4.8, vehicle: 'HB20 branco · QWE4R56', providerType: 'autonomo' },
-  { driverName: 'Transportes Lima', driverRating: 4.7, vehicle: 'Spin preta · RTY7U89', providerType: 'cnpj' },
-  { driverName: 'Marcos Alves', driverRating: 4.6, vehicle: 'Corolla cinza · ZXC0V12', providerType: 'mei' },
-];
-
-/** "Definir preço mínimo": tarifa base + valor por km */
-function minimumPriceCents(request: RideSearchRequest) {
-  const km = distanceKm(request.origin.coordinates, request.destination.coordinates);
-  return Math.round(BASE_FARE_CENTS + km * PER_KM_CENTS);
-}
-
-function findDrivers(request: RideSearchRequest, intermunicipal: boolean): RideOffer[] {
-  if (Math.random() < NO_DRIVER_CHANCE) return [];
-
-  // "Filtrar prestadores com CNPJ/MEI" quando a rota é intermunicipal
-  const eligible = intermunicipal ? DRIVERS.filter((d) => d.providerType !== 'autonomo') : DRIVERS;
-  const minimum = minimumPriceCents(request);
-
-  return eligible
-    .slice(0, 1 + Math.floor(Math.random() * eligible.length))
-    .map((driver, index) => ({
-      ...driver,
-      id: crypto.randomUUID(),
-      priceCents: minimum + index * 150,
-      etaMinutes: 3 + Math.floor(Math.random() * 10),
-    }))
-    .sort((a, b) => a.priceCents - b.priceCents);
-}
-
 /** Remove os campos internos da simulação antes de enviar ao cliente */
 function toPublic(stored: StoredSearch): RideSearch {
   const { resolvesAt, pendingOffers, ...search } = stored;
@@ -71,8 +32,7 @@ function toPublic(stored: StoredSearch): RideSearch {
 }
 
 export function createRideSearch(request: RideSearchRequest): RideSearch {
-  const { origin, destination } = request;
-  const intermunicipal = Boolean(origin.city && destination.city && origin.city !== destination.city);
+  const intermunicipal = isIntermunicipal(request.origin, request.destination);
   const isScheduled = request.departure.type === 'scheduled';
 
   const search: StoredSearch = {
@@ -84,7 +44,7 @@ export function createRideSearch(request: RideSearchRequest): RideSearch {
     offers: [],
     createdAt: new Date().toISOString(),
     resolvesAt: Date.now() + MATCHING_DELAY_MS,
-    pendingOffers: isScheduled ? [] : findDrivers(request, intermunicipal),
+    pendingOffers: isScheduled ? [] : matchDrivers(request.origin, request.destination, { intermunicipal }),
   };
 
   searches.set(search.id, search);

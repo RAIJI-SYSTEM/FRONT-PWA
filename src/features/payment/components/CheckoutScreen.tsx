@@ -12,12 +12,15 @@ import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import RouteSummary from '@/features/activities/components/RouteSummary';
+import { getDelivery } from '@/services/deliveries';
 import { createPayment } from '@/services/payments';
 import { getRideSearch } from '@/services/rideSearch';
-import type { CreatePaymentResponse } from '@/types/payment';
-import type { RideOffer, RideSearch } from '@/types/ride';
+import type { CreatePaymentResponse, PaymentKind } from '@/types/payment';
+import type { Place } from '@/types/place';
+import type { RideOffer } from '@/types/ride';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { useStripeAppearance } from '../hooks/useStripeAppearance';
+import { paymentPaths } from '../paths';
 import CheckoutForm from './CheckoutForm';
 
 const publishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
@@ -25,17 +28,22 @@ const publishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
 const stripePromise = publishableKey ? loadStripe(publishableKey) : null;
 
 interface CheckoutScreenProps {
-  searchId: string;
+  kind: PaymentKind;
+  /** ID da busca de viagem ou da entrega */
+  referenceId: string;
   offerId: string;
 }
 
 interface CheckoutData {
-  search: RideSearch;
+  route: { origin: Place; destination: Place };
   offer: RideOffer;
   payment: CreatePaymentResponse;
 }
 
-export default function CheckoutScreen({ searchId, offerId }: CheckoutScreenProps) {
+/** Viagem e encomenda têm origem, destino e ofertas: basta buscar no lugar certo */
+const loadReference = (kind: PaymentKind, id: string) => (kind === 'delivery' ? getDelivery(id) : getRideSearch(id));
+
+export default function CheckoutScreen({ kind, referenceId, offerId }: CheckoutScreenProps) {
   const appearance = useStripeAppearance();
   const [data, setData] = useState<CheckoutData | null>(null);
   const [error, setError] = useState<string | null>(stripePromise ? null : 'Stripe não configurado: defina NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY no .env.local');
@@ -44,19 +52,19 @@ export default function CheckoutScreen({ searchId, offerId }: CheckoutScreenProp
     if (!stripePromise) return;
     let active = true;
 
-    Promise.all([getRideSearch(searchId), createPayment(searchId, offerId)])
-      .then(([search, payment]) => {
-        const offer = search.offers.find((o) => o.id === offerId);
+    Promise.all([loadReference(kind, referenceId), createPayment({ kind, referenceId, offerId })])
+      .then(([reference, payment]) => {
+        const offer = reference.offers.find((o) => o.id === offerId);
         if (!active) return;
         if (!offer) throw new Error('Esta oferta não está mais disponível.');
-        setData({ search, offer, payment });
+        setData({ route: { origin: reference.origin, destination: reference.destination }, offer, payment });
       })
       .catch((err) => active && setError(err instanceof Error ? err.message : 'Não foi possível iniciar o pagamento.'));
 
     return () => {
       active = false;
     };
-  }, [searchId, offerId]);
+  }, [kind, referenceId, offerId]);
 
   if (error) return <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>;
   if (!data) {
@@ -67,8 +75,8 @@ export default function CheckoutScreen({ searchId, offerId }: CheckoutScreenProp
     );
   }
 
-  const { search, offer, payment } = data;
-  const statusPath = `/viagem/pagamento/status?busca=${searchId}&oferta=${offerId}`;
+  const { route, offer, payment } = data;
+  const statusPath = paymentPaths[kind].status(referenceId, offerId);
 
   return (
     <Stack spacing={2.5}>
@@ -87,7 +95,7 @@ export default function CheckoutScreen({ searchId, offerId }: CheckoutScreenProp
             </Typography>
           </Box>
         </Stack>
-        <RouteSummary origin={search.origin.name} destination={search.destination.name} />
+        <RouteSummary origin={route.origin.name} destination={route.destination.name} />
         <Divider sx={{ my: 2 }} />
         <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'baseline' }}>
           <Typography color="text.secondary">Total</Typography>

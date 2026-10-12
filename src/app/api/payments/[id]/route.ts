@@ -1,3 +1,4 @@
+import { handlePaymentSucceeded } from '@/server/payments';
 import { getStripe, StripeNotConfiguredError } from '@/server/stripe';
 import type { PaymentStatusResponse } from '@/types/payment';
 
@@ -10,7 +11,8 @@ export async function GET(_request: Request, ctx: RouteContext<'/api/payments/[i
 
     let body: PaymentStatusResponse;
     if (intent.status === 'succeeded') {
-      body = { status: 'succeeded' };
+      // O webhook também faz isso; repetir aqui garante a palavra-chave mesmo se ele atrasar
+      body = { status: 'succeeded', ...handlePaymentSucceeded(intent.metadata) };
     } else if (intent.status === 'canceled' || intent.last_payment_error) {
       body = { status: 'failed', message: intent.last_payment_error?.message };
     } else {

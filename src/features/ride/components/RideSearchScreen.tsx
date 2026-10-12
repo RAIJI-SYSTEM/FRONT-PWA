@@ -9,6 +9,7 @@ import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
 import Stack from '@mui/material/Stack';
 import StatusScreen from '@/components/StatusScreen';
+import { paymentPaths } from '@/features/payment/paths';
 import { cancelRideSearch } from '@/services/rideSearch';
 import type { RideOffer } from '@/types/ride';
 import { formatDate, formatTime } from '@/utils/formatDate';
@@ -34,8 +35,7 @@ export default function RideSearchScreen({ searchId }: { searchId: string }) {
     }
   };
 
-  const handleContinue = (offer: RideOffer) =>
-    router.push(`/viagem/pagamento?busca=${searchId}&oferta=${offer.id}`);
+  const handleContinue = (offer: RideOffer) => router.push(paymentPaths.ride.checkout(searchId, offer.id));
 
   if (!search) {
     return error ? (
@@ -51,7 +51,15 @@ export default function RideSearchScreen({ searchId }: { searchId: string }) {
 
   switch (search.status) {
     case 'searching':
-      return <SearchingView search={search} onCancel={handleCancel} canceling={canceling} />;
+      return (
+        <SearchingView
+          originName={search.origin.name}
+          destinationName={search.destination.name}
+          startedAt={search.createdAt}
+          onCancel={handleCancel}
+          canceling={canceling}
+        />
+      );
 
     case 'results':
       return <OfferList offers={search.offers} onContinue={handleContinue} />;

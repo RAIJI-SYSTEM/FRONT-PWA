@@ -12,10 +12,12 @@ import OfferCard from './OfferCard';
 interface OfferListProps {
   offers: RideOffer[];
   onContinue: (offer: RideOffer) => void;
+  /** Ex.: ['motorista', 'motoristas'] ou ['opção de entrega', 'opções de entrega'] */
+  noun?: [singular: string, plural: string];
 }
 
 /** "Escolher o melhor trajeto": as ofertas já vêm ordenadas por preço */
-export default function OfferList({ offers, onContinue }: OfferListProps) {
+export default function OfferList({ offers, onContinue, noun = ['motorista', 'motoristas'] }: OfferListProps) {
   const [selectedId, setSelectedId] = useState(offers[0]?.id);
   const selected = offers.find((offer) => offer.id === selectedId);
   const fastestId = offers.reduce((a, b) => (b.etaMinutes < a.etaMinutes ? b : a), offers[0])?.id;
@@ -24,14 +26,14 @@ export default function OfferList({ offers, onContinue }: OfferListProps) {
     <Stack spacing={2}>
       <Box>
         <Typography component="h2" variant="h6" sx={{ fontWeight: 700 }}>
-          {offers.length === 1 ? '1 motorista disponível' : `${offers.length} motoristas disponíveis`}
+          {offers.length === 1 ? `1 ${noun[0]} disponível` : `${offers.length} ${noun[1]} disponíveis`}
         </Typography>
         <Typography variant="body2" color="text.secondary">
           Escolha a melhor opção para você
         </Typography>
       </Box>
 
-      <Stack spacing={1.5} role="radiogroup" aria-label="Motoristas disponíveis">
+      <Stack spacing={1.5} role="radiogroup" aria-label={`${noun[1]} disponíveis`}>
         {offers.map((offer, index) => (
           <OfferCard
             key={offer.id}

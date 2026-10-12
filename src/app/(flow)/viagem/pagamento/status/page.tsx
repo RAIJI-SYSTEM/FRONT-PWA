@@ -11,8 +11,9 @@ export default async function PaymentStatusPage({ searchParams }: PageProps<'/vi
     <>
       <FlowTopBar title="Pagamento" backHref="/homepage" />
       <PaymentStatusScreen
+        kind="ride"
         paymentIntentId={payment_intent}
-        searchId={typeof busca === 'string' ? busca : undefined}
+        referenceId={typeof busca === 'string' ? busca : undefined}
         offerId={typeof oferta === 'string' ? oferta : undefined}
       />
     </>

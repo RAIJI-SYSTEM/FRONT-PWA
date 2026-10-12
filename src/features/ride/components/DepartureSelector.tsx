@@ -15,6 +15,9 @@ interface DepartureSelectorProps {
   scheduledAt: string;
   onScheduledAtChange: (value: string) => void;
   error?: string;
+  /** Texto de ajuda do agendamento */
+  scheduledHint?: string;
+  dateLabel?: string;
 }
 
 /** "Carona é para agora?" do BPMN */
@@ -24,6 +27,8 @@ export default function DepartureSelector({
   scheduledAt,
   onScheduledAtChange,
   error,
+  scheduledHint = 'Sua carona fica publicada no mural até um motorista aceitar.',
+  dateLabel = 'Data e horário da carona',
 }: DepartureSelectorProps) {
   return (
     <Stack spacing={2}>
@@ -63,11 +68,11 @@ export default function DepartureSelector({
       {mode === 'scheduled' && (
         <TextField
           type="datetime-local"
-          label="Data e horário da carona"
+          label={dateLabel}
           value={scheduledAt}
           onChange={(e) => onScheduledAtChange(e.target.value)}
           error={Boolean(error)}
-          helperText={error ?? 'Sua carona fica publicada no mural até um motorista aceitar.'}
+          helperText={error ?? scheduledHint}
           slotProps={{ inputLabel: { shrink: true } }}
         />
       )}

@@ -9,7 +9,7 @@ export default async function CheckoutPage({ searchParams }: PageProps<'/viagem/
   return (
     <>
       <FlowTopBar title="Pagamento" />
-      <CheckoutScreen searchId={busca} offerId={oferta} />
+      <CheckoutScreen kind="ride" referenceId={busca} offerId={oferta} />
     </>
   );
 }

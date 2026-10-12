@@ -1,4 +1,5 @@
 import type Stripe from 'stripe';
+import { handlePaymentSucceeded } from '@/server/payments';
 import { getStripe } from '@/server/stripe';
 
 /**
@@ -21,9 +22,9 @@ export async function POST(request: Request) {
 
   switch (event.type) {
     case 'payment_intent.succeeded': {
-      const { searchId, offerId } = event.data.object.metadata;
-      // TODO: "Pagamento concluído" → salvar a passagem no banco e avisar o motorista
-      console.info('[stripe] pagamento aprovado', { searchId, offerId });
+      // "Pagamento concluído" (encomendas: gera a palavra-chave)
+      handlePaymentSucceeded(event.data.object.metadata);
+      console.info('[stripe] pagamento aprovado', event.data.object.metadata);
       break;
     }
     case 'payment_intent.payment_failed': {

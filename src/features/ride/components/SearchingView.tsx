@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { Car, X } from 'lucide-react';
+import { Car, X, type LucideIcon } from 'lucide-react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Paper from '@mui/material/Paper';
@@ -9,10 +9,14 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import AdSlot from '@/components/AdSlot';
 import RouteSummary from '@/features/activities/components/RouteSummary';
-import type { RideSearch } from '@/types/ride';
 
 interface SearchingViewProps {
-  search: RideSearch;
+  originName: string;
+  destinationName: string;
+  /** Início da busca (ISO 8601), para o cronômetro */
+  startedAt: string;
+  title?: string;
+  icon?: LucideIcon;
   onCancel: () => void;
   canceling?: boolean;
 }
@@ -23,16 +27,27 @@ function formatElapsed(seconds: number) {
   return `${m}:${String(s).padStart(2, '0')}`;
 }
 
-/** "Aguardar resposta": animação de busca + espaço de anúncio enquanto nenhum motorista aceita */
-export default function SearchingView({ search, onCancel, canceling }: SearchingViewProps) {
+/**
+ * "Aguardar resposta": animação de busca + espaço de anúncio enquanto nenhum motorista aceita.
+ * Usada por viagens e encomendas.
+ */
+export default function SearchingView({
+  originName,
+  destinationName,
+  startedAt,
+  title = 'Procurando motoristas',
+  icon: Icon = Car,
+  onCancel,
+  canceling,
+}: SearchingViewProps) {
   const [elapsed, setElapsed] = useState(0);
 
   useEffect(() => {
-    const startedAt = Date.parse(search.createdAt);
-    const tick = () => setElapsed(Math.max(0, Math.floor((Date.now() - startedAt) / 1000)));
+    const start = Date.parse(startedAt);
+    const tick = () => setElapsed(Math.max(0, Math.floor((Date.now() - start) / 1000)));
     const timer = setInterval(tick, 1000);
     return () => clearInterval(timer);
-  }, [search.createdAt]);
+  }, [startedAt]);
 
   return (
     <Stack spacing={3} sx={{ alignItems: 'center', pb: 2 }}>
@@ -78,13 +93,13 @@ export default function SearchingView({ search, onCancel, canceling }: Searching
             boxShadow: 4,
           }}
         >
-          <Car size={38} />
+          <Icon size={38} />
         </Box>
       </Box>
 
       <Box sx={{ textAlign: 'center' }}>
         <Typography component="h2" variant="h5" sx={{ fontWeight: 700 }}>
-          Procurando motoristas
+          {title}
         </Typography>
         <Typography color="text.secondary">
           Avisamos assim que alguém aceitar · {formatElapsed(elapsed)}
@@ -92,7 +107,7 @@ export default function SearchingView({ search, onCancel, canceling }: Searching
       </Box>
 
       <Paper variant="outlined" sx={{ width: '100%', p: 2.5, borderRadius: 3 }}>
-        <RouteSummary origin={search.origin.name} destination={search.destination.name} />
+        <RouteSummary origin={originName} destination={destinationName} />
       </Paper>
 
       <AdSlot adSlotId={process.env.NEXT_PUBLIC_ADSENSE_SLOT_WAITING} />

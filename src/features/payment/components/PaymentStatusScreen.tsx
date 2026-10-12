@@ -2,26 +2,33 @@
 
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
-import { CircleCheck, CircleX, Hourglass } from 'lucide-react';
+import { CircleCheck, CircleX, Hourglass, PackageCheck } from 'lucide-react';
 import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
 import AdSlot from '@/components/AdSlot';
 import StatusScreen from '@/components/StatusScreen';
 import { getPaymentStatus } from '@/services/payments';
-import type { PaymentStatusResponse } from '@/types/payment';
+import DeliveryKeyword from '@/features/delivery/components/DeliveryKeyword';
+import type { PaymentKind, PaymentStatusResponse } from '@/types/payment';
+import { paymentPaths } from '../paths';
 
 const POLL_INTERVAL_MS = 3000;
 const pillButton = { height: 52, borderRadius: 999, textTransform: 'none', fontWeight: 600 } as const;
 
 interface PaymentStatusScreenProps {
+  kind: PaymentKind;
   paymentIntentId: string;
-  searchId?: string;
+  /** ID da busca de viagem ou da entrega */
+  referenceId?: string;
   offerId?: string;
 }
 
-/** "Aguardar retorno" → "Passagem adquirida" ou "Compra não concluída" */
-export default function PaymentStatusScreen({ paymentIntentId, searchId, offerId }: PaymentStatusScreenProps) {
+/**
+ * "Aguardar retorno" → sucesso ou "Compra não concluída".
+ * Viagem: "Passagem adquirida". Encomenda: "Confirmação e palavra-chave recebidas".
+ */
+export default function PaymentStatusScreen({ kind, paymentIntentId, referenceId, offerId }: PaymentStatusScreenProps) {
   const [result, setResult] = useState<PaymentStatusResponse>({ status: 'processing' });
   const [error, setError] = useState<string | null>(null);
 
@@ -50,6 +57,31 @@ export default function PaymentStatusScreen({ paymentIntentId, searchId, offerId
 
   if (error) return <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>;
 
+  if (result.status === 'succeeded' && kind === 'delivery') {
+    return (
+      <StatusScreen
+        icon={PackageCheck}
+        tone="success"
+        title="Entrega confirmada!"
+        description="Pagamento aprovado. O motorista vai buscar o pacote no endereço de origem."
+        actions={
+          <>
+            {referenceId && (
+              <Button component={Link} href={`/encomenda/${referenceId}`} variant="contained" sx={pillButton}>
+                Acompanhar entrega
+              </Button>
+            )}
+            <Button component={Link} href="/homepage" color="inherit" sx={pillButton}>
+              Voltar ao início
+            </Button>
+          </>
+        }
+      >
+        {result.keyword && <DeliveryKeyword keyword={result.keyword} />}
+      </StatusScreen>
+    );
+  }
+
   if (result.status === 'succeeded') {
     return (
       <StatusScreen
@@ -72,7 +104,8 @@ export default function PaymentStatusScreen({ paymentIntentId, searchId, offerId
   }
 
   if (result.status === 'failed') {
-    const retryHref = searchId && offerId ? `/viagem/pagamento?busca=${searchId}&oferta=${offerId}` : '/viagem/nova';
+    const fallback = kind === 'delivery' ? '/encomenda/nova' : '/viagem/nova';
+    const retryHref = referenceId && offerId ? paymentPaths[kind].checkout(referenceId, offerId) : fallback;
     return (
       <StatusScreen
         icon={CircleX}
