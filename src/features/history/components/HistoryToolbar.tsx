@@ -1,17 +1,20 @@
 'use client';
 
-import { useState, type ReactNode } from 'react';
-import { Search, SlidersHorizontal, X } from 'lucide-react';
+import { useEffect, useState, type ReactNode } from 'react';
+import dynamic from 'next/dynamic';
+import { Search, SlidersHorizontal } from 'lucide-react';
 import Badge from '@mui/material/Badge';
 import Box from '@mui/material/Box';
-import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
-import Drawer from '@mui/material/Drawer';
 import IconButton from '@mui/material/IconButton';
 import InputAdornment from '@mui/material/InputAdornment';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
+import { preloadWhenIdle } from '@/utils/preload';
+
+const loadFilterDrawer = () => import('./FilterDrawer');
+const FilterDrawer = dynamic(loadFilterDrawer);
 
 export interface StatusOption<S extends string> {
   value: S;
@@ -48,6 +51,15 @@ export default function HistoryToolbar<S extends string>({
   children,
 }: HistoryToolbarProps<S>) {
   const [open, setOpen] = useState(false);
+  // Depois de aberta uma vez, a gaveta continua montada (para a animação de fechar funcionar)
+  const [everOpened, setEverOpened] = useState(false);
+
+  useEffect(() => preloadWhenIdle(loadFilterDrawer), []);
+
+  const openFilters = () => {
+    setEverOpened(true);
+    setOpen(true);
+  };
 
   return (
     <Stack
@@ -87,7 +99,7 @@ export default function HistoryToolbar<S extends string>({
           sx={{ '& .MuiOutlinedInput-root': { borderRadius: 999 } }}
         />
         <IconButton
-          onClick={() => setOpen(true)}
+          onClick={openFilters}
           aria-label={activeFilters > 0 ? `Filtros (${activeFilters} ativos)` : 'Filtros'}
           sx={{ flexShrink: 0, border: 1, borderColor: activeFilters > 0 ? 'primary.main' : 'divider', bgcolor: 'background.paper' }}
         >
@@ -122,43 +134,12 @@ export default function HistoryToolbar<S extends string>({
         })}
       </Stack>
 
-      <Drawer
-        anchor="bottom"
-        open={open}
-        onClose={() => setOpen(false)}
-        slotProps={{ paper: { sx: { borderRadius: '24px 24px 0 0', maxWidth: 600, mx: 'auto' } } }}
-      >
-        <Box sx={{ p: 2.5, pb: 'calc(20px + env(safe-area-inset-bottom))' }} role="dialog" aria-labelledby="filters-title">
-          <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between', mb: 2 }}>
-            <Typography id="filters-title" variant="h6" sx={{ fontWeight: 700 }}>
-              Filtros
-            </Typography>
-            <IconButton onClick={() => setOpen(false)} aria-label="Fechar filtros">
-              <X size={20} />
-            </IconButton>
-          </Stack>
-          <Stack spacing={2.5}>{children}</Stack>
-          <Stack direction="row" spacing={1.5} sx={{ mt: 3 }}>
-            <Button
-              fullWidth
-              variant="outlined"
-              color="inherit"
-              onClick={onClear}
-              sx={{ height: 48, borderRadius: 999, textTransform: 'none', fontWeight: 600, borderColor: 'divider' }}
-            >
-              Limpar
-            </Button>
-            <Button
-              fullWidth
-              variant="contained"
-              onClick={() => setOpen(false)}
-              sx={{ height: 48, borderRadius: 999, textTransform: 'none', fontWeight: 600 }}
-            >
-              Ver {resultCount} resultado{resultCount === 1 ? '' : 's'}
-            </Button>
-          </Stack>
-        </Box>
-      </Drawer>
+      {/* A gaveta só é baixada na primeira vez que o usuário abre os filtros (ou quando o app fica ocioso) */}
+      {everOpened && (
+        <FilterDrawer open={open} onClose={() => setOpen(false)} onClear={onClear} resultCount={resultCount}>
+          {children}
+        </FilterDrawer>
+      )}
     </Stack>
   );
 }

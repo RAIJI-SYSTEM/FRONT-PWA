@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import { Car, CreditCard, QrCode, Users } from 'lucide-react';
 import Chip from '@mui/material/Chip';
 import Typography from '@mui/material/Typography';
@@ -10,7 +11,13 @@ import { RIDE_STATUS } from '../status';
 import DriverRow from './DriverRow';
 import HistoryCard from './HistoryCard';
 
-export default function RideHistoryCard({ ride, onRate }: { ride: RideHistoryItem; onRate: () => void }) {
+interface RideHistoryCardProps {
+  ride: RideHistoryItem;
+  /** Recebe o item: assim a mesma função serve para todos os cartões e o memo funciona */
+  onRate: (ride: RideHistoryItem) => void;
+}
+
+function RideHistoryCard({ ride, onRate }: RideHistoryCardProps) {
   const canceled = ride.status === 'canceled';
   const PaymentIcon = ride.paymentMethod === 'pix' ? QrCode : CreditCard;
 
@@ -41,9 +48,12 @@ export default function RideHistoryCard({ ride, onRate }: { ride: RideHistoryIte
           rating={ride.rating}
           finished={ride.status === 'completed'}
           active={ride.status === 'scheduled' || ride.status === 'in_progress'}
-          onRate={onRate}
+          onRate={() => onRate(ride)}
         />
       }
     />
   );
 }
+
+/** Só redesenha se o item mudar (ex.: foi avaliado), não a cada busca/filtro */
+export default memo(RideHistoryCard);

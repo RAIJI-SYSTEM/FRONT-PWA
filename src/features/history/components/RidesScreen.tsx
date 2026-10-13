@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useDeferredValue, useEffect, useState, type ComponentType } from 'react';
+import dynamic from 'next/dynamic';
 import { Star } from 'lucide-react';
 import Alert from '@mui/material/Alert';
 import ButtonBase from '@mui/material/ButtonBase';
@@ -11,12 +12,18 @@ import Typography from '@mui/material/Typography';
 import { listRides } from '@/services/history';
 import type { RideHistoryItem, RideHistoryStatus } from '@/types/history';
 import { formatCurrency } from '@/utils/formatCurrency';
+import { preloadWhenIdle } from '@/utils/preload';
 import { inPeriod, matchesQuery, PERIODS, type Period } from '../filters';
 import { useHistory } from '../useHistory';
 import HistoryList from './HistoryList';
+import type { RateDriverDialogProps } from './RateDriverDialog';
 import HistoryToolbar, { FilterGroup } from './HistoryToolbar';
-import RateDriverDialog from './RateDriverDialog';
 import RideHistoryCard from './RideHistoryCard';
+
+// O diálogo de avaliação só é baixado quando necessário (ou quando o app fica ocioso)
+const loadRateDialog = () => import('./RateDriverDialog');
+// `import type` acima some no build; o tipo aqui só recupera o genérico que o dynamic perde
+const RateDriverDialog = dynamic(loadRateDialog) as ComponentType<RateDriverDialogProps<RideHistoryItem>>;
 
 type StatusFilter = 'all' | 'active' | 'completed' | 'canceled';
 type TypeFilter = 'all' | 'shared' | 'solo';
@@ -39,6 +46,10 @@ export default function RidesScreen() {
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<StatusFilter>('all');
   const [filters, setFilters] = useState(DEFAULTS);
+  // A digitação atualiza o campo na hora; o filtro da lista vem logo depois, sem travar o teclado
+  const deferredSearch = useDeferredValue(search);
+
+  useEffect(() => preloadWhenIdle(loadRateDialog), []);
 
   if (!items) {
     return error ? (
@@ -52,7 +63,7 @@ export default function RidesScreen() {
 
   // Tudo, menos o status: assim os chips mostram quantas sobram em cada situação
   const matchesOthers = (ride: RideHistoryItem) =>
-    matchesQuery(search, ride.origin, ride.destination, ride.driver.name) &&
+    matchesQuery(deferredSearch, ride.origin, ride.destination, ride.driver.name) &&
     inPeriod(ride.date, filters.period) &&
     (filters.type === 'all' || ride.shared === (filters.type === 'shared')) &&
     (filters.rating === 'all' || (filters.rating === 'unrated' ? needsRating(ride) : Boolean(ride.rating))) &&
@@ -61,7 +72,7 @@ export default function RidesScreen() {
   const base = items.filter(matchesOthers);
   const visible = base.filter((ride) => STATUS_GROUPS[status].includes(ride.status));
   const activeFilters = (Object.keys(DEFAULTS) as (keyof typeof DEFAULTS)[]).filter((key) => filters[key] !== DEFAULTS[key]).length;
-  const filtered = activeFilters > 0 || status !== 'all' || search.trim() !== '';
+  const filtered = activeFilters > 0 || status !== 'all' || deferredSearch.trim() !== '';
   const spent = visible.filter((r) => r.status === 'completed').reduce((total, r) => total + r.priceCents, 0);
   const toRate = items.filter(needsRating).length;
 
@@ -155,11 +166,13 @@ export default function RidesScreen() {
       </HistoryToolbar>
 
       <HistoryList
+        // Filtros mudaram → a lista recomeça do início (primeira parte)
+        key={`${status}|${JSON.stringify(filters)}|${deferredSearch}`}
         items={visible}
         emptyTitle="Você ainda não fez nenhuma corrida"
         filtered={filtered}
         onClear={clear}
-        renderItem={(ride) => <RideHistoryCard ride={ride} onRate={() => startRating(ride)} />}
+        renderItem={(ride) => <RideHistoryCard ride={ride} onRate={startRating} />}
       />
 
       {rating && <RateDriverDialog kind="rides" item={rating} driver={rating.driver} onClose={cancelRating} onRated={onRated} />}

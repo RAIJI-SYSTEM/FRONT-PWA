@@ -1,22 +1,27 @@
 'use client';
 
 import { useState } from 'react';
-import { Download, X } from 'lucide-react';
-import Box from '@mui/material/Box';
+import dynamic from 'next/dynamic';
 import ButtonBase from '@mui/material/ButtonBase';
-import Dialog from '@mui/material/Dialog';
-import IconButton from '@mui/material/IconButton';
-import Stack from '@mui/material/Stack';
 import type { Attachment } from '@/types/message';
+
+const loadLightbox = () => import('./ImageLightbox');
+const ImageLightbox = dynamic(loadLightbox);
 
 /** Miniatura da foto; ao tocar, abre em tela cheia com opção de baixar */
 export default function ImageAttachment({ attachment }: { attachment: Attachment }) {
   const [open, setOpen] = useState(false);
+  const [everOpened, setEverOpened] = useState(false);
 
   return (
     <>
       <ButtonBase
-        onClick={() => setOpen(true)}
+        // Começa a baixar o visualizador quando o dedo encosta, antes de soltar: abre sem atraso
+        onPointerDown={() => void loadLightbox()}
+        onClick={() => {
+          setEverOpened(true);
+          setOpen(true);
+        }}
         aria-label={`Ampliar imagem ${attachment.name}`}
         sx={{ display: 'block', width: '100%', borderRadius: 2, overflow: 'hidden', bgcolor: 'action.hover' }}
       >
@@ -29,26 +34,8 @@ export default function ImageAttachment({ attachment }: { attachment: Attachment
         />
       </ButtonBase>
 
-      <Dialog
-        open={open}
-        onClose={() => setOpen(false)}
-        fullScreen
-        aria-label={attachment.name}
-        slotProps={{ paper: { sx: { bgcolor: 'rgba(0 0 0 / 0.92)' } } }}
-      >
-        <Stack direction="row" spacing={1} sx={{ justifyContent: 'flex-end', p: 1.5 }}>
-          <IconButton component="a" href={attachment.url} download={attachment.name} aria-label="Baixar imagem" sx={{ color: '#fff' }}>
-            <Download size={22} />
-          </IconButton>
-          <IconButton onClick={() => setOpen(false)} aria-label="Fechar" sx={{ color: '#fff' }} autoFocus>
-            <X size={24} />
-          </IconButton>
-        </Stack>
-        <Box sx={{ flex: 1, display: 'grid', placeItems: 'center', p: 2, minHeight: 0 }} onClick={() => setOpen(false)}>
-          {/* eslint-disable-next-line @next/next/no-img-element -- idem */}
-          <img src={attachment.url} alt={attachment.name} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
-        </Box>
-      </Dialog>
+      {/* Montado só depois do primeiro toque; continua montado para a animação de fechar */}
+      {everOpened && <ImageLightbox attachment={attachment} open={open} onClose={() => setOpen(false)} />}
     </>
   );
 }

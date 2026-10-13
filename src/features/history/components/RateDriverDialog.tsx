@@ -19,7 +19,7 @@ import { MAX_RATING_COMMENT, tagsFor } from '@/utils/ratingTags';
 
 const LABELS: Record<number, string> = { 1: 'Péssima', 2: 'Ruim', 3: 'Ok', 4: 'Boa', 5: 'Excelente' };
 
-interface RateDriverDialogProps<T extends RideHistoryItem | DeliveryHistoryItem> {
+export interface RateDriverDialogProps<T extends RideHistoryItem | DeliveryHistoryItem> {
   kind: HistoryKind;
   item: T;
   driver: HistoryDriver;

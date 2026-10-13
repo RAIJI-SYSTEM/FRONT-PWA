@@ -1,5 +1,6 @@
 'use client';
 
+import { memo } from 'react';
 import { Package, User } from 'lucide-react';
 import Chip from '@mui/material/Chip';
 import Typography from '@mui/material/Typography';
@@ -11,7 +12,13 @@ import { DELIVERY_STATUS } from '../status';
 import DriverRow from './DriverRow';
 import HistoryCard from './HistoryCard';
 
-export default function DeliveryHistoryCard({ delivery, onRate }: { delivery: DeliveryHistoryItem; onRate: () => void }) {
+interface DeliveryHistoryCardProps {
+  delivery: DeliveryHistoryItem;
+  /** Recebe o item: assim a mesma função serve para todos os cartões e o memo funciona */
+  onRate: (delivery: DeliveryHistoryItem) => void;
+}
+
+function DeliveryHistoryCard({ delivery, onRate }: DeliveryHistoryCardProps) {
   const canceled = delivery.status === 'canceled';
   const size = PACKAGE_SIZES.find((s) => s.value === delivery.size);
 
@@ -37,9 +44,12 @@ export default function DeliveryHistoryCard({ delivery, onRate }: { delivery: De
           rating={delivery.rating}
           finished={delivery.status === 'delivered'}
           active={delivery.status === 'awaiting_pickup' || delivery.status === 'in_transit'}
-          onRate={onRate}
+          onRate={() => onRate(delivery)}
         />
       }
     />
   );
 }
+
+/** Só redesenha se o item mudar (ex.: foi avaliado), não a cada busca/filtro */
+export default memo(DeliveryHistoryCard);

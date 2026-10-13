@@ -1,6 +1,7 @@
 'use client';
 
-import { useState } from 'react';
+import { useDeferredValue, useEffect, useState, type ComponentType } from 'react';
+import dynamic from 'next/dynamic';
 import { Star } from 'lucide-react';
 import Alert from '@mui/material/Alert';
 import ButtonBase from '@mui/material/ButtonBase';
@@ -13,12 +14,18 @@ import { listDeliveries } from '@/services/history';
 import type { PackageSize } from '@/types/delivery';
 import type { DeliveryHistoryItem, DeliveryHistoryStatus } from '@/types/history';
 import { formatCurrency } from '@/utils/formatCurrency';
+import { preloadWhenIdle } from '@/utils/preload';
 import { inPeriod, matchesQuery, PERIODS, type Period } from '../filters';
 import { useHistory } from '../useHistory';
 import DeliveryHistoryCard from './DeliveryHistoryCard';
 import HistoryList from './HistoryList';
+import type { RateDriverDialogProps } from './RateDriverDialog';
 import HistoryToolbar, { FilterGroup } from './HistoryToolbar';
-import RateDriverDialog from './RateDriverDialog';
+
+// O diálogo de avaliação só é baixado quando necessário (ou quando o app fica ocioso)
+const loadRateDialog = () => import('./RateDriverDialog');
+// `import type` acima some no build; o tipo aqui só recupera o genérico que o dynamic perde
+const RateDriverDialog = dynamic(loadRateDialog) as ComponentType<RateDriverDialogProps<DeliveryHistoryItem>>;
 
 type StatusFilter = 'all' | 'active' | 'delivered' | 'canceled';
 type RatingFilter = 'all' | 'unrated' | 'rated';
@@ -39,6 +46,10 @@ export default function DeliveriesScreen() {
   const [search, setSearch] = useState('');
   const [status, setStatus] = useState<StatusFilter>('all');
   const [filters, setFilters] = useState(DEFAULTS);
+  // A digitação atualiza o campo na hora; o filtro da lista vem logo depois, sem travar o teclado
+  const deferredSearch = useDeferredValue(search);
+
+  useEffect(() => preloadWhenIdle(loadRateDialog), []);
 
   if (!items) {
     return error ? (
@@ -51,7 +62,7 @@ export default function DeliveriesScreen() {
   }
 
   const matchesOthers = (d: DeliveryHistoryItem) =>
-    matchesQuery(search, d.code, d.description, d.recipientName, d.origin, d.destination, d.driver.name) &&
+    matchesQuery(deferredSearch, d.code, d.description, d.recipientName, d.origin, d.destination, d.driver.name) &&
     inPeriod(d.date, filters.period) &&
     (filters.size === 'all' || d.size === filters.size) &&
     (filters.rating === 'all' || (filters.rating === 'unrated' ? needsRating(d) : Boolean(d.rating)));
@@ -59,7 +70,7 @@ export default function DeliveriesScreen() {
   const base = items.filter(matchesOthers);
   const visible = base.filter((d) => STATUS_GROUPS[status].includes(d.status));
   const activeFilters = (Object.keys(DEFAULTS) as (keyof typeof DEFAULTS)[]).filter((key) => filters[key] !== DEFAULTS[key]).length;
-  const filtered = activeFilters > 0 || status !== 'all' || search.trim() !== '';
+  const filtered = activeFilters > 0 || status !== 'all' || deferredSearch.trim() !== '';
   const spent = visible.filter((d) => d.status === 'delivered').reduce((total, d) => total + d.priceCents, 0);
   const toRate = items.filter(needsRating).length;
 
@@ -139,11 +150,13 @@ export default function DeliveriesScreen() {
       </HistoryToolbar>
 
       <HistoryList
+        // Filtros mudaram → a lista recomeça do início (primeira parte)
+        key={`${status}|${JSON.stringify(filters)}|${deferredSearch}`}
         items={visible}
         emptyTitle="Você ainda não enviou nenhuma encomenda"
         filtered={filtered}
         onClear={clear}
-        renderItem={(delivery) => <DeliveryHistoryCard delivery={delivery} onRate={() => startRating(delivery)} />}
+        renderItem={(delivery) => <DeliveryHistoryCard delivery={delivery} onRate={startRating} />}
       />
 
       {rating && (

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import dynamic from 'next/dynamic';
 import { PartyPopper, TicketPercent } from 'lucide-react';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
@@ -17,7 +18,10 @@ import { formatCurrency } from '@/utils/formatCurrency';
 import { useRewardedAd } from '../hooks';
 import AdChallengeCard from './AdChallengeCard';
 import CouponCard from './CouponCard';
-import MockAdDialog from './MockAdDialog';
+
+// Anúncio simulado: só usado no navegador (no app nativo quem exibe é o AdMob), então nunca
+// entra no carregamento inicial — é baixado apenas se o usuário tocar em "assistir" na web
+const MockAdDialog = dynamic(() => import('./MockAdDialog'));
 
 const loadOnce = () => false;
 /** No app nativo o ponto chega pelo callback SSV do Google, que pode levar alguns segundos */
