@@ -1,3 +1,4 @@
+import 'server-only';
 import type { PaymentKind } from '@/types/payment';
 import { findDeliveryOffer, markDeliveryPaid } from './deliveries';
 import { findOffer } from './rideSearches';

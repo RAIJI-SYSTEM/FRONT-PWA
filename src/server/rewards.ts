@@ -3,6 +3,7 @@
  * Em produção: banco de dados por usuário, e pontos creditados SÓ pelo callback de
  * verificação do AdMob (SSV, ver server/admobSsv.ts) — nunca por uma chamada do app.
  */
+import 'server-only';
 import { AD_POINTS, type AdChallenge, type Coupon, type RewardedAdKind, type RewardsState } from '@/types/rewards';
 
 const FIRST_COUPON_CENTS = 1500;

@@ -1,5 +1,5 @@
 import { findPayableOffer } from '@/server/payments';
-import { getStripe, StripeNotConfiguredError } from '@/server/stripe';
+import { getStripe, StripeConfigError } from '@/server/stripe';
 import type { CreatePaymentRequest, CreatePaymentResponse } from '@/types/payment';
 
 /**
@@ -35,7 +35,7 @@ export async function POST(request: Request) {
     };
     return Response.json(body, { status: 201 });
   } catch (error) {
-    if (error instanceof StripeNotConfiguredError) {
+    if (error instanceof StripeConfigError) {
       return Response.json({ error: error.message }, { status: 503 });
     }
     console.error('[payments] erro ao criar PaymentIntent', error);

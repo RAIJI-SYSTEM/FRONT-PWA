@@ -9,8 +9,9 @@ import IconButton from '@mui/material/IconButton';
 import Stack from '@mui/material/Stack';
 import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
+import useScrollTrigger from '@mui/material/useScrollTrigger';
 import { useUnreadMessages } from '@/features/messages/hooks/useUnreadMessages';
-import type { ReactNode } from 'react';
+import { useEffect, useRef, type ReactNode } from 'react';
 import Link from 'next/link';
 import { Bell, MapPin, MessageCircle } from 'lucide-react';
 
@@ -71,8 +72,42 @@ export default function Header({
   messagesCount,
 }: HeaderProps) {
   const unreadMessages = useUnreadMessages();
+  const headerRef = useRef<HTMLElement>(null);
+  // Depois de rolar um pouco, o cabeçalho ganha linha e sombra para se separar do conteúdo
+  const scrolled = useScrollTrigger({ disableHysteresis: true, threshold: 4 });
+
+  // Publica a altura do cabeçalho numa variável CSS: elementos fixos da página (ex.: busca e
+  // filtros) usam `top: var(--app-header-height)` para encaixar logo abaixo dele
+  useEffect(() => {
+    const header = headerRef.current;
+    if (!header) return;
+    const root = document.documentElement;
+    const observer = new ResizeObserver(() => root.style.setProperty('--app-header-height', `${header.offsetHeight}px`));
+    observer.observe(header);
+    return () => {
+      observer.disconnect();
+      root.style.removeProperty('--app-header-height');
+    };
+  }, []);
   return (
-    <AppBar position="static" elevation={0} color="transparent" sx={{ color: 'text.primary' }}>
+    <AppBar
+      ref={headerRef}
+      position="sticky"
+      elevation={0}
+      color="transparent"
+      sx={{
+        top: 0,
+        color: 'text.primary',
+        // Fica sempre visível ao rolar. No topo é transparente (mostra o degradê do layout);
+        // depois de rolar, ganha fundo levemente transparente com desfoque
+        bgcolor: scrolled ? 'rgba(var(--mui-palette-background-defaultChannel) / 0.85)' : 'transparent',
+        backdropFilter: scrolled ? 'blur(12px)' : 'none',
+        borderBottom: 1,
+        borderColor: scrolled ? 'divider' : 'transparent',
+        boxShadow: scrolled ? '0 4px 16px rgba(0 0 0 / 0.08)' : 'none',
+        transition: 'background-color 200ms, border-color 200ms, box-shadow 200ms',
+      }}
+    >
       <Container maxWidth="md" disableGutters>
         <Toolbar sx={{ justifyContent: 'space-between', gap: 2, py: { xs: 1.5, sm: 2.5 }, px: { xs: 2, sm: 3 } }}>
           <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center', minWidth: 0 }}>

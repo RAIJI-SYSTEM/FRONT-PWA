@@ -1,6 +1,6 @@
 import type Stripe from 'stripe';
 import { handlePaymentSucceeded } from '@/server/payments';
-import { getStripe } from '@/server/stripe';
+import { getStripe, getStripeWebhookSecret, StripeConfigError } from '@/server/stripe';
 
 /**
  * Webhook do Stripe: a fonte da verdade sobre o pagamento.
@@ -8,9 +8,15 @@ import { getStripe } from '@/server/stripe';
  * porque ele roda mesmo que o passageiro feche o app (importante no Pix, que é assíncrono).
  */
 export async function POST(request: Request) {
-  const secret = process.env.STRIPE_WEBHOOK_SECRET;
+  let secret: string;
+  try {
+    secret = getStripeWebhookSecret();
+  } catch (error) {
+    if (error instanceof StripeConfigError) return new Response(error.message, { status: 503 });
+    throw error;
+  }
   const signature = request.headers.get('stripe-signature');
-  if (!secret || !signature) return new Response('Webhook não configurado', { status: 400 });
+  if (!signature) return new Response('Assinatura ausente', { status: 400 });
 
   let event: Stripe.Event;
   try {

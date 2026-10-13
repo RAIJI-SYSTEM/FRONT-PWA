@@ -3,6 +3,7 @@
  * automáticas do motorista. Em produção, use o backend real com WebSocket/SSE
  * (ou um serviço de chat) e push notifications.
  */
+import 'server-only';
 import {
   ME_ID,
   SYSTEM_ID,

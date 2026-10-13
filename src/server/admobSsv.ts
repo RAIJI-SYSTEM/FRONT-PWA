@@ -6,6 +6,7 @@
  * Só um callback com assinatura válida pode creditar pontos — isso impede que alguém
  * "ganhe" cupons chamando a API diretamente.
  */
+import 'server-only';
 
 const KEYS_URL = 'https://www.gstatic.com/admob/reward/verifier-keys.json';
 const KEYS_CACHE_MS = 24 * 60 * 60 * 1000;

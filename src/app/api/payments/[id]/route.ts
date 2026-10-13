@@ -1,5 +1,5 @@
 import { handlePaymentSucceeded } from '@/server/payments';
-import { getStripe, StripeNotConfiguredError } from '@/server/stripe';
+import { getStripe, StripeConfigError } from '@/server/stripe';
 import type { PaymentStatusResponse } from '@/types/payment';
 
 /** "Aguardar retorno": a tela de status consulta aqui até o pagamento ser aprovado ou recusado */
@@ -21,7 +21,7 @@ export async function GET(_request: Request, ctx: RouteContext<'/api/payments/[i
     }
     return Response.json(body);
   } catch (error) {
-    if (error instanceof StripeNotConfiguredError) {
+    if (error instanceof StripeConfigError) {
       return Response.json({ error: error.message }, { status: 503 });
     }
     return Response.json({ error: 'Pagamento não encontrado.' }, { status: 404 });

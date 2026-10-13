@@ -2,6 +2,7 @@
  * SIMULAÇÃO compartilhada entre viagens e encomendas: sorteia motoristas fictícios
  * e define o preço mínimo. Em produção, isso é responsabilidade do backend real.
  */
+import 'server-only';
 import type { Place } from '@/types/place';
 import type { RideOffer } from '@/types/ride';
 import { distanceKm } from '@/utils/geo';

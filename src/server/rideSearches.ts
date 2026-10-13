@@ -9,6 +9,7 @@
  * a memória do processo não é compartilhada entre instâncias (ex.: Vercel) e
  * é perdida a cada reinício.
  */
+import 'server-only';
 import type { RideOffer, RideSearch, RideSearchRequest } from '@/types/ride';
 import { isIntermunicipal, matchDrivers, MATCHING_DELAY_MS } from './matching';
 

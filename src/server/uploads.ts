@@ -3,6 +3,7 @@
  * Guarda tudo em memória. Em produção, troque por um storage (S3, R2, GCS...)
  * — idealmente com URLs pré-assinadas, para o arquivo ir direto do celular ao storage.
  */
+import 'server-only';
 import type { Attachment } from '@/types/message';
 import { attachmentTypeFor, baseMimeType, MAX_ATTACHMENT_BYTES, MAX_VOICE_SECONDS } from '@/utils/attachments';
 

@@ -6,6 +6,7 @@
  *
  * Guarda tudo em memória: troque pelo backend real em produção.
  */
+import 'server-only';
 import type { Delivery, DeliveryDetailsRequest, PackageSize } from '@/types/delivery';
 import type { Place } from '@/types/place';
 import type { RideOffer } from '@/types/ride';
