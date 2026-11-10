@@ -1,3 +1,5 @@
+import { normalize } from '@/utils/text';
+
 export type Period = 'all' | '7d' | '30d' | '90d';
 
 export const PERIODS: { value: Period; label: string }[] = [
@@ -15,13 +17,6 @@ export function inPeriod(isoDate: string, period: Period) {
   const time = Date.parse(isoDate);
   return time >= Date.now() - PERIOD_DAYS[period] * 86_400_000;
 }
-
-/** "Sírio-Libanês" → "sirio-libanes": busca sem diferenciar acentos e maiúsculas */
-export const normalize = (text: string) =>
-  text
-    .normalize('NFD')
-    .replace(/[̀-ͯ]/g, '')
-    .toLowerCase();
 
 export function matchesQuery(query: string, ...fields: (string | undefined)[]) {
   const q = normalize(query.trim());

@@ -1,7 +1,15 @@
-/** Conversa direta com o motorista ou grupo de quem divide a mesma viagem */
-export type ConversationKind = 'driver' | 'group';
+/** Modo do app em que a conversa aparece: como passageiro ou como motorista */
+export type AppMode = 'passenger' | 'driver';
 
-export type ParticipantRole = 'me' | 'driver' | 'passenger';
+/**
+ * - driver: conversa direta com o motorista (modo passageiro)
+ * - passenger: conversa direta com um passageiro (modo motorista)
+ * - company: conversa com uma empresa que envia encomendas (modo motorista)
+ * - group: grupo de quem divide a mesma viagem
+ */
+export type ConversationKind = 'driver' | 'passenger' | 'company' | 'group';
+
+export type ParticipantRole = 'me' | 'driver' | 'passenger' | 'company';
 
 export interface Participant {
   id: string;
@@ -50,6 +58,7 @@ export interface ConversationContext {
 
 export interface ConversationSummary {
   id: string;
+  mode: AppMode;
   kind: ConversationKind;
   title: string;
   /** Ex.: veículo do motorista, ou "4 participantes" */

@@ -1,21 +1,30 @@
-import { redirect } from 'next/navigation';
+'use client';
+
 import FlowTopBar from '@/components/FlowTopBar';
+import Redirect from '@/components/Redirect';
+import WithSearchParams from '@/components/WithSearchParams';
 import PaymentStatusScreen from '@/features/payment/components/PaymentStatusScreen';
 
-export default async function PaymentStatusPage({ searchParams }: PageProps<'/viagem/pagamento/status'>) {
-  // payment_intent é adicionado pelo app ou pelo próprio Stripe (ao voltar de um redirecionamento)
-  const { payment_intent, busca, oferta } = await searchParams;
-  if (typeof payment_intent !== 'string') redirect('/homepage');
-
+/** /viagem/pagamento/status?busca=...&oferta=...&payment_intent=... */
+export default function PaymentStatusPage() {
   return (
     <>
       <FlowTopBar title="Pagamento" backHref="/homepage" />
-      <PaymentStatusScreen
-        kind="ride"
-        paymentIntentId={payment_intent}
-        referenceId={typeof busca === 'string' ? busca : undefined}
-        offerId={typeof oferta === 'string' ? oferta : undefined}
-      />
+      <WithSearchParams>
+        {(params) => {
+          // payment_intent é adicionado pelo app ou pelo próprio Stripe (ao voltar de um redirecionamento)
+          const paymentIntent = params.get('payment_intent');
+          if (!paymentIntent) return <Redirect to="/homepage" />;
+          return (
+            <PaymentStatusScreen
+              kind="ride"
+              paymentIntentId={paymentIntent}
+              referenceId={params.get('busca') ?? undefined}
+              offerId={params.get('oferta') ?? undefined}
+            />
+          );
+        }}
+      </WithSearchParams>
     </>
   );
 }

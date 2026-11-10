@@ -4,6 +4,7 @@ import InputAdornment from '@mui/material/InputAdornment';
 import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import PackageSizePicker from '../PackageSizePicker';
+import FragileToggle from './FragileToggle';
 import type { DetailsErrors, DetailsForm } from './form';
 
 interface StepProps {
@@ -15,6 +16,8 @@ interface StepProps {
 export default function PackageStep({ form, errors, update }: StepProps) {
   return (
     <Stack spacing={2.5}>
+      {/* Primeiro item: quem envia algo frágil já marca de cara */}
+      <FragileToggle checked={form.fragile} onChange={(fragile) => update({ fragile })} />
       <PackageSizePicker value={form.size} onChange={(size) => update({ size })} error={errors.size} />
       <TextField
         label="Descrição do conteúdo"

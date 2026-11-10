@@ -10,6 +10,7 @@ import { createRideSearch } from '@/services/rideSearch';
 import type { Place } from '@/types/place';
 import type { Departure } from '@/types/ride';
 import DepartureSelector, { type DepartureMode } from './DepartureSelector';
+import { routes } from '@/utils/routes';
 
 /** Antecedência mínima para agendar uma carona */
 const MIN_SCHEDULE_MINUTES = 15;
@@ -42,7 +43,7 @@ export default function NewRideScreen({ initialMode = 'now' }: NewRideScreenProp
     setSubmitting(true);
     try {
       const search = await createRideSearch({ origin, destination, departure });
-      router.push(`/viagem/busca/${search.id}`);
+      router.push(routes.rideSearch(search.id));
     } catch (error) {
       setApiError(error instanceof Error ? error.message : 'Não foi possível iniciar a busca.');
       setSubmitting(false);

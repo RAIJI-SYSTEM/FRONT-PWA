@@ -12,6 +12,8 @@ export interface FooterItem {
   label: string;
   href: string;
   icon: ReactNode;
+  /** Outras páginas que também deixam este item ativo (ex.: telas abertas a partir do "Mais") */
+  also?: string[];
 }
 
 const defaultItems: FooterItem[] = [
@@ -21,13 +23,29 @@ const defaultItems: FooterItem[] = [
   { label: 'Mais', href: '/mais', icon: <Ellipsis size={22} /> },
 ];
 
+/** Menu do modo motorista (perfil e rotas ficam dentro do "Mais") */
+const driverItems: FooterItem[] = [
+  { label: 'Início', href: '/motorista', icon: <House size={22} /> },
+  { label: 'Viagens', href: '/motorista/viagens', icon: <Car size={22} /> },
+  { label: 'Encomendas', href: '/motorista/encomendas', icon: <Package size={22} /> },
+  { label: 'Mais', href: '/motorista/mais', icon: <Ellipsis size={22} />, also: ['/motorista/perfil', '/motorista/rotas'] },
+];
+
+const matches = (pathname: string, path: string) => pathname === path || pathname.startsWith(`${path}/`);
+
 export interface FooterProps {
   items?: FooterItem[];
+  /** Atalho para os menus prontos: passageiro (padrão) ou motorista */
+  mode?: 'passenger' | 'driver';
 }
 
-export default function Footer({ items = defaultItems }: FooterProps) {
+export default function Footer({ mode = 'passenger', items = mode === 'driver' ? driverItems : defaultItems }: FooterProps) {
   const pathname = usePathname();
-  const activeHref = items.find((item) => pathname === item.href || pathname.startsWith(`${item.href}/`))?.href;
+  // Vence o item cujo caminho que combina é o mais específico ("/motorista/perfil" ativa "Mais", não "Início")
+  const activeHref = items
+    .map((item) => ({ href: item.href, length: Math.max(-1, ...[item.href, ...(item.also ?? [])].filter((p) => matches(pathname, p)).map((p) => p.length)) }))
+    .filter((item) => item.length >= 0)
+    .sort((a, b) => b.length - a.length)[0]?.href;
 
   return (
     <Paper

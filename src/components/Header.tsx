@@ -4,6 +4,7 @@ import AppBar from '@mui/material/AppBar';
 import Avatar from '@mui/material/Avatar';
 import Badge from '@mui/material/Badge';
 import Box from '@mui/material/Box';
+import Chip from '@mui/material/Chip';
 import Container from '@mui/material/Container';
 import IconButton from '@mui/material/IconButton';
 import Stack from '@mui/material/Stack';
@@ -11,6 +12,8 @@ import Toolbar from '@mui/material/Toolbar';
 import Typography from '@mui/material/Typography';
 import useScrollTrigger from '@mui/material/useScrollTrigger';
 import { useUnreadMessages } from '@/features/messages/hooks/useUnreadMessages';
+import { useUnreadNotifications } from '@/features/notifications/hooks';
+import type { AppMode } from '@/types/message';
 import { useEffect, useRef, type ReactNode } from 'react';
 import Link from 'next/link';
 import { Bell, MapPin, MessageCircle } from 'lucide-react';
@@ -19,10 +22,14 @@ export interface HeaderProps {
   userName?: string;
   avatarSrc?: string;
   location?: string;
+  /** Notificações não lidas. Se não for passado, é consultado na API de notificações. */
   notificationsCount?: number;
-  onNotificationsClick?: () => void;
   /** Mensagens não lidas. Se não for passado, é consultado na API de conversas. */
   messagesCount?: number;
+  /** Etiqueta do modo atual (ex.: "Motorista"), ao lado do nome */
+  modeLabel?: string;
+  /** Modo do app: define qual caixa de mensagens o botão abre */
+  mode?: AppMode;
 }
 
 interface HeaderIconButtonProps {
@@ -67,11 +74,13 @@ export default function Header({
   userName = 'Usuário',
   avatarSrc,
   location,
-  notificationsCount = 0,
-  onNotificationsClick,
+  notificationsCount,
   messagesCount,
+  modeLabel,
+  mode = 'passenger',
 }: HeaderProps) {
-  const unreadMessages = useUnreadMessages();
+  const unreadMessages = useUnreadMessages(mode);
+  const unreadNotifications = useUnreadNotifications(mode);
   const headerRef = useRef<HTMLElement>(null);
   // Depois de rolar um pouco, o cabeçalho ganha linha e sombra para se separar do conteúdo
   const scrolled = useScrollTrigger({ disableHysteresis: true, threshold: 4 });
@@ -134,6 +143,9 @@ export default function Header({
               >
                 Olá, {userName}
               </Typography>
+              {modeLabel && (
+                <Chip label={modeLabel} size="small" color="primary" sx={{ height: 20, fontWeight: 700, fontSize: '0.7rem', mb: 0.25 }} />
+              )}
               {location && (
                 <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center', color: 'text.secondary' }}>
                   <MapPin size={14} />
@@ -150,13 +162,13 @@ export default function Header({
               label="Mensagens"
               count={messagesCount ?? unreadMessages}
               icon={<MessageCircle size={20} />}
-              href="/mensagens"
+              href={mode === 'driver' ? '/motorista/mensagens' : '/mensagens'}
             />
             <HeaderIconButton
               label="Notificações"
-              count={notificationsCount}
+              count={notificationsCount ?? unreadNotifications}
               icon={<Bell size={20} />}
-              onClick={onNotificationsClick}
+              href={mode === 'driver' ? '/motorista/notificacoes' : '/notificacoes'}
             />
           </Stack>
         </Toolbar>

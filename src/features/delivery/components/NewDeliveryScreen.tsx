@@ -9,6 +9,7 @@ import Typography from '@mui/material/Typography';
 import RoutePicker from '@/features/map/components/RoutePicker';
 import { createDelivery } from '@/services/deliveries';
 import type { Place } from '@/types/place';
+import { routes } from '@/utils/routes';
 
 const LABELS = {
   origin: 'Coletar em',
@@ -29,7 +30,7 @@ export default function NewDeliveryScreen() {
     try {
       // O sistema verifica se a rota é válida antes de pedir os dados do produto
       const delivery = await createDelivery(origin, destination);
-      router.push(`/encomenda/${delivery.id}/produto`);
+      router.push(routes.deliveryDetails(delivery.id));
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Não foi possível verificar a rota.');
       setSubmitting(false);

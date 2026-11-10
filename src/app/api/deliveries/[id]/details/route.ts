@@ -7,6 +7,7 @@ function validate(body: Partial<DeliveryDetailsRequest>): string | null {
   const { details, departure } = body;
   if (!details || !SIZES.includes(details.size)) return 'Escolha o tamanho do pacote.';
   if (!details.description?.trim()) return 'Descreva o que está enviando.';
+  if (details.fragile !== undefined && typeof details.fragile !== 'boolean') return 'Campo "frágil" inválido.';
   if (!details.recipientName?.trim()) return 'Informe quem vai receber.';
   if ((details.recipientPhone?.replace(/\D/g, '').length ?? 0) < 10) return 'Telefone do destinatário inválido.';
   if (departure?.type !== 'now' && !(departure?.type === 'scheduled' && !Number.isNaN(Date.parse(departure.at))))

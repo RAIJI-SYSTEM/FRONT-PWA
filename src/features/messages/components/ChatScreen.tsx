@@ -12,6 +12,7 @@ import Container from '@mui/material/Container';
 import IconButton from '@mui/material/IconButton';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
+import { useLockPageScroll } from '@/hooks/useLockPageScroll';
 import { usePolling } from '@/hooks/usePolling';
 import { getConversation, sendMessage } from '@/services/messages';
 import { ME_ID, SYSTEM_ID, type Attachment, type ChatMessage, type Conversation } from '@/types/message';
@@ -24,7 +25,11 @@ const POLL_INTERVAL_MS = 2500;
 const keepPolling = () => true;
 
 /** Respostas prontas para a conversa com o motorista */
-const QUICK_REPLIES = ['Já estou no local', 'Estou descendo', 'Pode me esperar 2 min?', 'Obrigado!'];
+/** Respostas prontas de cada lado da conversa */
+const QUICK_REPLIES = {
+  passenger: ['Já estou no local', 'Estou descendo', 'Pode me esperar 2 min?', 'Obrigado!'],
+  driver: ['Estou a caminho', 'Cheguei ao local', 'Chego em 5 min', 'Obrigado!'],
+};
 
 interface PendingMessage {
   key: number;
@@ -124,6 +129,7 @@ function ContextCard({ conversation }: { conversation: Conversation }) {
 
 /** Conversa com o motorista ou com o grupo da viagem compartilhada */
 export default function ChatScreen({ conversationId }: { conversationId: string }) {
+  useLockPageScroll();
   const { data: conversation, error, setData } = usePolling(conversationId, getConversation, keepPolling, POLL_INTERVAL_MS);
   const [pending, setPending] = useState<PendingMessage[]>([]);
   const [sendError, setSendError] = useState<string | null>(null);
@@ -207,7 +213,11 @@ export default function ChatScreen({ conversationId }: { conversationId: string 
       <Box component="header" sx={{ borderBottom: 1, borderColor: 'divider', bgcolor: 'background.default' }}>
         <Container maxWidth="sm" sx={{ px: { xs: 1.5, sm: 3 } }}>
           <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center', py: 1.25 }}>
-            <IconButton component={Link} href="/mensagens" aria-label="Voltar para as conversas">
+            <IconButton
+              component={Link}
+              href={conversation.mode === 'driver' ? '/motorista/mensagens' : '/mensagens'}
+              aria-label="Voltar para as conversas"
+            >
               <ArrowLeft size={20} />
             </IconButton>
             <ConversationAvatar conversation={conversation} size={40} />
@@ -249,7 +259,7 @@ export default function ChatScreen({ conversationId }: { conversationId: string 
           )}
           <ChatComposer
             placeholder={isGroup ? 'Mensagem para o grupo' : `Mensagem para ${conversation.title.split(' ')[0]}`}
-            quickReplies={isGroup ? undefined : QUICK_REPLIES}
+            quickReplies={isGroup ? undefined : QUICK_REPLIES[conversation.mode]}
             onSend={send}
           />
         </Container>

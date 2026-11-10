@@ -6,6 +6,7 @@ import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
+import ActionBar from '@/components/ActionBar';
 import type { RideOffer } from '@/types/ride';
 import OfferCard from './OfferCard';
 
@@ -45,15 +46,18 @@ export default function OfferList({ offers, onContinue, noun = ['motorista', 'mo
         ))}
       </Stack>
 
-      <Button
-        variant="contained"
-        disabled={!selected}
-        onClick={() => selected && onContinue(selected)}
-        endIcon={<ArrowRight size={20} />}
-        sx={{ height: 56, borderRadius: 999, fontSize: '1rem', fontWeight: 600, textTransform: 'none', boxShadow: 3 }}
-      >
-        Continuar para pagamento
-      </Button>
+      <ActionBar>
+        <Button
+          fullWidth
+          variant="contained"
+          disabled={!selected}
+          onClick={() => selected && onContinue(selected)}
+          endIcon={<ArrowRight size={20} />}
+          sx={{ height: 56, borderRadius: 999, fontSize: '1rem', fontWeight: 600, textTransform: 'none', boxShadow: 3 }}
+        >
+          Continuar para pagamento
+        </Button>
+      </ActionBar>
     </Stack>
   );
 }

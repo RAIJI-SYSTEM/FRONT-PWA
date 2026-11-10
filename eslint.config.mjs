@@ -10,6 +10,8 @@ const eslintConfig = defineConfig([
     // Default ignores of eslint-config-next:
     ".next/**",
     "out/**",
+    // Projeto Android do Capacitor (contém uma cópia do build em assets/public)
+    "android/**",
     "build/**",
     "next-env.d.ts",
   ]),

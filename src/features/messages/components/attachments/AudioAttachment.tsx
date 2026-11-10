@@ -10,6 +10,7 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import type { Attachment } from '@/types/message';
 import { formatDuration } from '@/utils/attachments';
+import { apiUrl } from '@/services/api';
 
 const SPEEDS = [1, 1.5, 2];
 
@@ -39,7 +40,7 @@ export default function AudioAttachment({ attachment, mine }: { attachment: Atta
     <Stack direction="row" spacing={1} sx={{ alignItems: 'center', minWidth: { xs: 220, sm: 260 } }}>
       <audio
         ref={audioRef}
-        src={attachment.url}
+        src={apiUrl(attachment.url)}
         preload="metadata"
         onPlay={() => setPlaying(true)}
         onPause={() => setPlaying(false)}

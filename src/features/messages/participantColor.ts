@@ -1,3 +1,5 @@
+import type { Theme } from '@mui/material/styles';
+
 /** Cores que funcionam no tema claro e no escuro, para diferenciar quem fala no grupo */
 const COLORS = ['#EF6C00', '#0288D1', '#7B1FA2', '#2E7D32', '#C2185B', '#00838F', '#6D4C41'];
 
@@ -14,8 +16,9 @@ export function participantColor(id: string) {
  */
 export function participantNameSx(id: string) {
   const color = participantColor(id);
-  return {
+  // applyStyles segue o tema escolhido no app (não só o do sistema)
+  return (theme: Theme) => ({
     color,
-    '@media (prefers-color-scheme: dark)': { color: `color-mix(in srgb, ${color} 55%, white)` },
-  };
+    ...theme.applyStyles('dark', { color: `color-mix(in srgb, ${color} 55%, white)` }),
+  });
 }

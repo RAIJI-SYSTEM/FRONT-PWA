@@ -6,6 +6,7 @@ import Dialog from '@mui/material/Dialog';
 import IconButton from '@mui/material/IconButton';
 import Stack from '@mui/material/Stack';
 import type { Attachment } from '@/types/message';
+import { apiUrl } from '@/services/api';
 
 interface ImageLightboxProps {
   attachment: Attachment;
@@ -24,7 +25,7 @@ export default function ImageLightbox({ attachment, open, onClose }: ImageLightb
       slotProps={{ paper: { sx: { bgcolor: 'rgba(0 0 0 / 0.92)' } } }}
     >
       <Stack direction="row" spacing={1} sx={{ justifyContent: 'flex-end', p: 1.5 }}>
-        <IconButton component="a" href={attachment.url} download={attachment.name} aria-label="Baixar imagem" sx={{ color: '#fff' }}>
+        <IconButton component="a" href={apiUrl(attachment.url)} download={attachment.name} aria-label="Baixar imagem" sx={{ color: '#fff' }}>
           <Download size={22} />
         </IconButton>
         <IconButton onClick={onClose} aria-label="Fechar" sx={{ color: '#fff' }} autoFocus>
@@ -33,7 +34,7 @@ export default function ImageLightbox({ attachment, open, onClose }: ImageLightb
       </Stack>
       <Box sx={{ flex: 1, display: 'grid', placeItems: 'center', p: 2, minHeight: 0 }} onClick={onClose}>
         {/* eslint-disable-next-line @next/next/no-img-element -- idem */}
-        <img src={attachment.url} alt={attachment.name} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
+        <img src={apiUrl(attachment.url)} alt={attachment.name} style={{ maxWidth: '100%', maxHeight: '100%', objectFit: 'contain' }} />
       </Box>
     </Dialog>
   );

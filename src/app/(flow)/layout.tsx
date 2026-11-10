@@ -12,7 +12,8 @@ export default function FlowLayout({ children }: { children: React.ReactNode }) 
           'linear-gradient(180deg, rgba(var(--mui-palette-primary-mainChannel) / 0.18) 0%, transparent 240px)',
       }}
     >
-      <Container maxWidth="sm" sx={{ px: { xs: 2, sm: 3 }, pb: 4 }}>
+      {/* Coluna com a altura da tela: permite que barras de ação fiquem no fim mesmo com pouco conteúdo */}
+      <Container maxWidth="sm" sx={{ px: { xs: 2, sm: 3 }, pb: 4, minHeight: '100dvh', display: 'flex', flexDirection: 'column' }}>
         {children}
       </Container>
     </Box>

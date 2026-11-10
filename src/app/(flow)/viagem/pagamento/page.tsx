@@ -1,15 +1,23 @@
-import { redirect } from 'next/navigation';
+'use client';
+
 import FlowTopBar from '@/components/FlowTopBar';
+import Redirect from '@/components/Redirect';
+import WithSearchParams from '@/components/WithSearchParams';
 import CheckoutScreen from '@/features/payment/components/CheckoutScreen';
 
-export default async function CheckoutPage({ searchParams }: PageProps<'/viagem/pagamento'>) {
-  const { busca, oferta } = await searchParams;
-  if (typeof busca !== 'string' || typeof oferta !== 'string') redirect('/viagem/nova');
-
+/** /viagem/pagamento?busca=...&oferta=... */
+export default function CheckoutPage() {
   return (
     <>
       <FlowTopBar title="Pagamento" />
-      <CheckoutScreen kind="ride" referenceId={busca} offerId={oferta} />
+      <WithSearchParams>
+        {(params) => {
+          const search = params.get('busca');
+          const offer = params.get('oferta');
+          if (!search || !offer) return <Redirect to="/viagem/nova" />;
+          return <CheckoutScreen kind="ride" referenceId={search} offerId={offer} />;
+        }}
+      </WithSearchParams>
     </>
   );
 }

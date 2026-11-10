@@ -45,6 +45,7 @@ export interface DeliveryHistoryItem {
   priceCents: number;
   size: PackageSize;
   description: string;
+  fragile?: boolean;
   recipientName: string;
   driver: HistoryDriver;
   rating?: DriverRating;

@@ -23,6 +23,10 @@ interface PlaceAutocompleteProps {
   /** Campo cujo ponto está sendo escolhido no mapa (fica destacado) */
   active?: boolean;
   onFocus?: () => void;
+  /** Outra busca no lugar da de endereços (ex.: só cidades) */
+  search?: (query: string, signal: AbortSignal) => Promise<Place[]>;
+  noOptionsText?: string;
+  size?: 'small' | 'medium';
 }
 
 export default function PlaceAutocomplete({
@@ -34,6 +38,9 @@ export default function PlaceAutocomplete({
   error,
   active,
   onFocus,
+  search,
+  noOptionsText = 'Digite pelo menos 3 letras do endereço',
+  size = 'small',
 }: PlaceAutocompleteProps) {
   const [options, setOptions] = useState<Place[]>([]);
   const [loading, setLoading] = useState(false);
@@ -55,7 +62,7 @@ export default function PlaceAutocomplete({
       const controller = new AbortController();
       abortRef.current = controller;
       try {
-        setOptions(await searchPlaces(query, proximity, controller.signal));
+        setOptions(await (search ? search(query, controller.signal) : searchPlaces(query, proximity, controller.signal)));
       } catch {
         if (!controller.signal.aborted) setOptions([]);
       } finally {
@@ -66,7 +73,7 @@ export default function PlaceAutocomplete({
 
   return (
     <Autocomplete
-      size="small"
+      size={size}
       value={value}
       options={value ? [value, ...options.filter((o) => o.id !== value.id)] : options}
       loading={loading}
@@ -79,7 +86,7 @@ export default function PlaceAutocomplete({
       isOptionEqualToValue={(a, b) => a.id === b.id}
       onChange={(_, place) => onChange(place)}
       onInputChange={(_, query, reason) => reason === 'input' && handleInputChange(query)}
-      noOptionsText="Digite pelo menos 3 letras do endereço"
+      noOptionsText={noOptionsText}
       loadingText="Buscando endereços…"
       renderOption={({ key, ...props }, place) => (
         <li key={key} {...props}>

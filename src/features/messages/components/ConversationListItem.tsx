@@ -10,6 +10,7 @@ import { ME_ID, SYSTEM_ID, type ConversationSummary } from '@/types/message';
 import { formatMessageTime } from '@/utils/formatDate';
 import { describeMessage } from '../describe';
 import ConversationAvatar from './ConversationAvatar';
+import { routes } from '@/utils/routes';
 
 /** Prévia da última mensagem: "Você: ...", "Ana: ..." (em grupos) ou só o texto */
 function preview(conversation: ConversationSummary) {
@@ -17,7 +18,8 @@ function preview(conversation: ConversationSummary) {
   if (!last) return 'Nenhuma mensagem ainda';
   const content = describeMessage(last); // "Foto", "Mensagem de voz (0:04)", nome do documento...
   if (last.senderId === ME_ID) return `Você: ${content}`;
-  if (last.senderId === SYSTEM_ID || conversation.kind === 'driver') return content;
+  // Conversa direta (motorista, passageiro ou empresa): não precisa dizer quem mandou
+  if (last.senderId === SYSTEM_ID || conversation.kind !== 'group') return content;
   const sender = conversation.participants.find((p) => p.id === last.senderId);
   return `${sender?.name.split(' ')[0] ?? 'Alguém'}: ${content}`;
 }
@@ -29,7 +31,7 @@ export default function ConversationListItem({ conversation }: { conversation: C
   return (
     <ListItemButton
       component={Link}
-      href={`/mensagens/${conversation.id}`}
+      href={routes.conversation(conversation.id)}
       sx={{ gap: 1.5, py: 1.5, px: 2, borderRadius: 3, alignItems: 'center' }}
     >
       <ConversationAvatar conversation={conversation} />

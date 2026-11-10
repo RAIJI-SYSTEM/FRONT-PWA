@@ -14,6 +14,7 @@ import type { Activity } from '@/types/activity';
 import { formatDate, formatTime } from '@/utils/formatDate';
 import { shipmentStatusConfig, tripStatusConfig } from '../status';
 import RouteSummary from './RouteSummary';
+import { routes } from '@/utils/routes';
 
 interface ActivityCardProps {
   activity: Activity;
@@ -23,7 +24,7 @@ export default function ActivityCard({ activity }: ActivityCardProps) {
   const isTrip = activity.kind === 'trip';
   const status = isTrip ? tripStatusConfig[activity.status] : shipmentStatusConfig[activity.status];
   const date = isTrip ? activity.scheduledAt : activity.estimatedDelivery;
-  const href = isTrip ? `/viagem/${activity.id}` : `/encomenda/${activity.id}`;
+  const href = isTrip ? '/corridas' : routes.delivery(activity.id);
   const Icon = isTrip ? Car : Package;
   // Ilustração de fundo para identificar o tipo à primeira vista (carro = viagem, caixas = encomenda)
   const Illustration = isTrip ? CarFront : Boxes;

@@ -47,7 +47,7 @@ export default function MessageBubble({ message, mine, sender, showSender, sendi
         {sender && showSender && (
           <Typography
             variant="caption"
-            sx={{ display: 'block', fontWeight: 700, px: imageOnly ? 1 : 0, ...participantNameSx(sender.id) }}
+            sx={[{ display: 'block', fontWeight: 700, px: imageOnly ? 1 : 0 }, participantNameSx(sender.id)]}
           >
             {sender.name}
             {sender.role === 'driver' && ' · motorista'}

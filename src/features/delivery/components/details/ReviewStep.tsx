@@ -54,6 +54,7 @@ export default function ReviewStep({ form, onEdit }: ReviewStepProps) {
       <ReviewItem title="Pacote" onEdit={() => onEdit('package')}>
         <Typography sx={{ fontWeight: 700 }}>
           {size?.label} · {form.description}
+          {form.fragile && ' · Frágil'}
         </Typography>
         <Typography variant="body2" color="text.secondary">
           {size?.hint}

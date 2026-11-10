@@ -4,13 +4,14 @@ import ButtonBase from '@mui/material/ButtonBase';
 import Typography from '@mui/material/Typography';
 import type { Attachment } from '@/types/message';
 import { fileExtension, formatBytes } from '@/utils/attachments';
+import { apiUrl } from '@/services/api';
 
 /** Card do documento: tipo, nome, tamanho e download */
 export default function DocumentAttachment({ attachment, mine }: { attachment: Attachment; mine: boolean }) {
   return (
     <ButtonBase
       component="a"
-      href={attachment.url}
+      href={apiUrl(attachment.url)}
       download={attachment.name}
       aria-label={`Baixar ${attachment.name} (${formatBytes(attachment.sizeBytes)})`}
       sx={{

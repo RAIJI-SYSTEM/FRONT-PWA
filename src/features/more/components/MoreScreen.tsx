@@ -1,85 +1,24 @@
 'use client';
 
 import Link from 'next/link';
-import { ChevronRight, FileText, Gift, LogOut, Settings, User, type LucideIcon } from 'lucide-react';
+import { CarFront, ChevronRight, FileText, Gift, LogOut, Repeat, Settings, User } from 'lucide-react';
 import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
 import ButtonBase from '@mui/material/ButtonBase';
-import Chip from '@mui/material/Chip';
-import Divider from '@mui/material/Divider';
-import List from '@mui/material/List';
-import ListItemButton from '@mui/material/ListItemButton';
-import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import AdSlot from '@/components/AdSlot';
-
-interface MenuOption {
-  label: string;
-  description: string;
-  href: string;
-  icon: LucideIcon;
-  /** Destaque à direita, ex.: saldo de recompensas */
-  badge?: string;
-}
+import OptionList, { type MenuOption } from './OptionList';
 
 const ACCOUNT_OPTIONS: MenuOption[] = [
   { label: 'Perfil', description: 'Nome, foto, telefone e e-mail', href: '/perfil', icon: User },
   { label: 'Recompensas', description: 'Seus cupons e missões', href: '/recompensas', icon: Gift, badge: 'Ganhe R$ 15' },
-  { label: 'Configurações', description: 'Notificações, tema e privacidade', href: '/configuracoes', icon: Settings },
+  { label: 'Configurações', description: 'Tema e notificações', href: '/configuracoes', icon: Settings },
 ];
 
 const LEGAL_OPTIONS: MenuOption[] = [
   { label: 'Termos de uso', description: 'Regras de uso da plataforma', href: '/termos', icon: FileText },
 ];
-
-function OptionList({ title, options }: { title: string; options: MenuOption[] }) {
-  return (
-    <Box component="section" aria-labelledby={`more-${title}`}>
-      <Typography
-        id={`more-${title}`}
-        variant="overline"
-        color="text.secondary"
-        sx={{ display: 'block', px: 1, mb: 0.5, fontWeight: 700, letterSpacing: 1 }}
-      >
-        {title}
-      </Typography>
-      <Paper variant="outlined" sx={{ borderRadius: 3, overflow: 'hidden' }}>
-        <List disablePadding>
-          {options.map(({ label, description, href, icon: Icon, badge }, index) => (
-            <Box key={href}>
-              {index > 0 && <Divider component="li" sx={{ ml: 9 }} />}
-              <ListItemButton component={Link} href={href} sx={{ gap: 2, py: 1.5, px: 2 }}>
-                <Box
-                  sx={{
-                    width: 44,
-                    height: 44,
-                    flexShrink: 0,
-                    borderRadius: 2,
-                    display: 'grid',
-                    placeItems: 'center',
-                    color: 'primary.main',
-                    bgcolor: 'rgba(var(--mui-palette-primary-mainChannel) / 0.12)',
-                  }}
-                >
-                  <Icon size={22} />
-                </Box>
-                <Box sx={{ flex: 1, minWidth: 0 }}>
-                  <Typography sx={{ fontWeight: 600 }}>{label}</Typography>
-                  <Typography variant="body2" color="text.secondary" noWrap>
-                    {description}
-                  </Typography>
-                </Box>
-                {badge && <Chip label={badge} size="small" color="primary" sx={{ fontWeight: 700 }} />}
-                <ChevronRight size={20} style={{ flexShrink: 0, opacity: 0.6 }} />
-              </ListItemButton>
-            </Box>
-          ))}
-        </List>
-      </Paper>
-    </Box>
-  );
-}
 
 interface MoreScreenProps {
   userName: string;
@@ -126,6 +65,45 @@ export default function MoreScreen({ userName, userDetail, avatarSrc }: MoreScre
           </Typography>
         </Box>
         <ChevronRight size={22} style={{ flexShrink: 0 }} />
+      </ButtonBase>
+
+      {/* Mesma conta, outro modo: quem ainda não é motorista cai no cadastro (CNH + veículo) */}
+      <ButtonBase
+        component={Link}
+        href="/motorista"
+        sx={{
+          width: '100%',
+          justifyContent: 'flex-start',
+          gap: 2,
+          p: 2,
+          borderRadius: 3,
+          textAlign: 'left',
+          border: 2,
+          borderColor: 'primary.main',
+          bgcolor: 'rgba(var(--mui-palette-primary-mainChannel) / 0.08)',
+        }}
+      >
+        <Box
+          sx={{
+            width: 48,
+            height: 48,
+            flexShrink: 0,
+            borderRadius: 2,
+            display: 'grid',
+            placeItems: 'center',
+            color: 'primary.contrastText',
+            bgcolor: 'primary.main',
+          }}
+        >
+          <CarFront size={24} />
+        </Box>
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          <Typography sx={{ fontWeight: 800 }}>Modo motorista</Typography>
+          <Typography variant="body2" color="text.secondary">
+            Publique rotas e aceite corridas e encomendas da sua região.
+          </Typography>
+        </Box>
+        <Repeat size={20} style={{ flexShrink: 0 }} color="var(--mui-palette-primary-main)" />
       </ButtonBase>
 
       <OptionList title="Conta" options={ACCOUNT_OPTIONS} />

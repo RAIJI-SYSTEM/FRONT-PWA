@@ -12,6 +12,7 @@ import { getPaymentStatus } from '@/services/payments';
 import DeliveryKeyword from '@/features/delivery/components/DeliveryKeyword';
 import type { PaymentKind, PaymentStatusResponse } from '@/types/payment';
 import { paymentPaths } from '../paths';
+import { routes } from '@/utils/routes';
 
 const POLL_INTERVAL_MS = 3000;
 const pillButton = { height: 52, borderRadius: 999, textTransform: 'none', fontWeight: 600 } as const;
@@ -67,7 +68,7 @@ export default function PaymentStatusScreen({ kind, paymentIntentId, referenceId
         actions={
           <>
             {referenceId && (
-              <Button component={Link} href={`/encomenda/${referenceId}`} variant="contained" sx={pillButton}>
+              <Button component={Link} href={routes.delivery(referenceId)} variant="contained" sx={pillButton}>
                 Acompanhar entrega
               </Button>
             )}

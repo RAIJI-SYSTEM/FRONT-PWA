@@ -44,7 +44,7 @@ function seed() {
   const deliveries: DeliveryHistoryItem[] = [
     { id: 'e1', code: '#H62J568107', status: 'in_transit', origin: 'Av. Paulista, 1000', destination: 'R. Augusta, 250', date: daysAgo(0, 15), priceCents: 931, size: 'small', description: 'Livros', recipientName: 'Maria Silva', driver: DRIVERS.lima },
     { id: 'e2', code: '#K91B220431', status: 'awaiting_pickup', origin: 'R. Oscar Freire, 90', destination: 'Av. Brasil, 1500', date: daysAgo(-1, 10), priceCents: 1540, size: 'medium', description: 'Roupas', recipientName: 'João Pedro', driver: DRIVERS.rafa },
-    { id: 'e3', code: '#P07Z993215', status: 'delivered', origin: 'Casa', destination: 'Rio de Janeiro, RJ', date: daysAgo(3, 9), priceCents: 18900, size: 'large', description: 'Monitor', recipientName: 'Beatriz Lima', driver: DRIVERS.lima },
+    { id: 'e3', code: '#P07Z993215', status: 'delivered', origin: 'Casa', destination: 'Rio de Janeiro, RJ', date: daysAgo(3, 9), priceCents: 18900, size: 'large', description: 'Monitor', fragile: true, recipientName: 'Beatriz Lima', driver: DRIVERS.lima },
     { id: 'e4', code: '#A11C443290', status: 'delivered', origin: 'Trabalho', destination: 'Cartório Central', date: daysAgo(8, 11), priceCents: 820, size: 'envelope', description: 'Documentos', recipientName: 'Cartório', driver: DRIVERS.rafa, rating: rated(5, ['Pontual', 'Boa comunicação'], 8) },
     { id: 'e5', code: '#B55D110072', status: 'canceled', origin: 'Casa', destination: 'Osasco', date: daysAgo(15, 16), priceCents: 0, size: 'medium', description: 'Presente', recipientName: 'Ana Ribeiro', driver: DRIVERS.lima },
     { id: 'e6', code: '#C20E781154', status: 'delivered', origin: 'Casa', destination: 'Guarulhos', date: daysAgo(40, 13), priceCents: 2760, size: 'small', description: 'Eletrônicos', recipientName: 'Carlos Mendes', driver: DRIVERS.rafa },
@@ -54,8 +54,9 @@ function seed() {
   return { rides, deliveries };
 }
 
-const globalStore = globalThis as unknown as { history?: ReturnType<typeof seed> };
-const store = (globalStore.history ??= seed());
+// A chave tem versão: ao mudar os dados de exemplo, troque-a para o `next dev` recriar tudo
+const globalStore = globalThis as unknown as { historyV2?: ReturnType<typeof seed> };
+const store = (globalStore.historyV2 ??= seed());
 
 /** Mais recentes primeiro; agendadas (no futuro) aparecem no topo */
 const byDateDesc = <T extends { date: string }>(items: T[]) => [...items].sort((a, b) => Date.parse(b.date) - Date.parse(a.date));

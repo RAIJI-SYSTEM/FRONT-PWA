@@ -5,7 +5,11 @@ import { createTheme } from '@mui/material/styles';
 const theme = createTheme({
   // Ativar cssVariables é crucial no Next.js App Router para evitar 
   // erros de hidratação e flickering ao alternar entre claro/escuro.
-  cssVariables: true, 
+  cssVariables: {
+    // Tema aplicado por classe no <html> ("light"/"dark"): permite o usuário escolher
+    // claro, escuro ou seguir o sistema (tela Mais → Configurações)
+    colorSchemeSelector: 'class',
+  },
   
   colorSchemes: {
     // ==========================================
@@ -77,6 +81,13 @@ const theme = createTheme({
   },
 
   components: {
+    MuiCssBaseline: {
+      styleOverrides: {
+        // Sem o efeito de "esticar"/brilho ao puxar além do início ou do fim da página
+        // (Android): no app, cabeçalho e menu ficam parados
+        'html, body': { overscrollBehavior: 'none' },
+      },
+    },
     MuiOutlinedInput: {
       styleOverrides: {
         // Fundo sólido nos campos, para o autofill ter uma cor para "imitar"

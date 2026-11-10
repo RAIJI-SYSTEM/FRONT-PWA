@@ -71,7 +71,7 @@ export function submitDeliveryDetails(id: string, { details, departure }: Delive
   if (!delivery) throw new DeliveryError('Entrega não encontrada.', 404);
   if (delivery.status !== 'awaiting_details') throw new DeliveryError('Os dados desta entrega já foram enviados.', 409);
 
-  delivery.details = details;
+  delivery.details = { ...details, fragile: details.fragile === true };
   delivery.departure = departure;
   delivery.createdAt = new Date().toISOString(); // a espera começa agora
 

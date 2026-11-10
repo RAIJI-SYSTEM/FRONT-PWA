@@ -9,6 +9,7 @@ import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
+import ActionBar from '@/components/ActionBar';
 import { formatCurrency } from '@/utils/formatCurrency';
 
 interface CheckoutFormProps {
@@ -61,19 +62,22 @@ export default function CheckoutForm({ amountCents, statusPath }: CheckoutFormPr
 
       {error && <Alert severity="error">{error}</Alert>}
 
-      <Button
-        type="submit"
-        variant="contained"
-        disabled={!stripe || !ready || submitting}
-        startIcon={submitting ? <CircularProgress size={20} color="inherit" /> : <Lock size={18} />}
-        sx={{ height: 56, borderRadius: 999, fontSize: '1rem', fontWeight: 600, textTransform: 'none', boxShadow: 3 }}
-      >
-        Pagar {formatCurrency(amountCents)}
-      </Button>
-
       <Typography variant="caption" color="text.secondary" sx={{ textAlign: 'center' }}>
         Pagamento processado com segurança pelo Stripe. Não armazenamos os dados do seu cartão.
       </Typography>
+
+      <ActionBar>
+        <Button
+          type="submit"
+          fullWidth
+          variant="contained"
+          disabled={!stripe || !ready || submitting}
+          startIcon={submitting ? <CircularProgress size={20} color="inherit" /> : <Lock size={18} />}
+          sx={{ height: 56, borderRadius: 999, fontSize: '1rem', fontWeight: 600, textTransform: 'none', boxShadow: 3 }}
+        >
+          Pagar {formatCurrency(amountCents)}
+        </Button>
+      </ActionBar>
     </Stack>
   );
 }

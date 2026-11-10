@@ -1,10 +1,12 @@
 import type { DepartureMode } from '@/features/ride/components/DepartureSelector';
 import type { PackageSize } from '@/types/delivery';
+import { parseMoney } from '@/utils/money';
 
 /** Estado do questionário de dados do pacote, compartilhado entre as etapas */
 export interface DetailsForm {
   size: PackageSize | null;
   description: string;
+  fragile: boolean;
   declaredValue: string;
   recipientName: string;
   recipientPhone: string;
@@ -19,6 +21,7 @@ export type DetailsErrors = Partial<Record<DetailsField, string>>;
 export const EMPTY_FORM: DetailsForm = {
   size: null,
   description: '',
+  fragile: false,
   declaredValue: '',
   recipientName: '',
   recipientPhone: '',
@@ -38,12 +41,7 @@ export type StepKey = (typeof STEPS)[number]['key'];
 
 const MIN_SCHEDULE_MINUTES = 30;
 
-/** "12,50" → 1250 centavos; vazio → undefined; inválido → NaN */
-export function parseMoney(value: string) {
-  if (!value.trim()) return undefined;
-  const number = Number(value.replace(/\./g, '').replace(',', '.'));
-  return Number.isFinite(number) && number >= 0 ? Math.round(number * 100) : NaN;
-}
+export { parseMoney };
 
 /** Valida só os campos da etapa atual, para o usuário corrigir antes de avançar */
 export function validateStep(step: StepKey, form: DetailsForm): DetailsErrors {

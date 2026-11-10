@@ -1,7 +1,8 @@
-import type { ChatMessage, Conversation, ConversationSummary, SendMessageRequest } from '@/types/message';
+import type { AppMode, ChatMessage, Conversation, ConversationSummary, SendMessageRequest } from '@/types/message';
 import { apiFetch } from './api';
 
-export const listConversations = () => apiFetch<ConversationSummary[]>('/api/conversations');
+export const listConversations = (mode: AppMode = 'passenger') =>
+  apiFetch<ConversationSummary[]>(mode === 'driver' ? '/api/conversations?modo=motorista' : '/api/conversations');
 
 export const getConversation = (id: string) => apiFetch<Conversation>(`/api/conversations/${id}`);
 

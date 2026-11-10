@@ -10,7 +10,7 @@ export const paymentPaths: Record<
     status: (id, offer) => `/viagem/pagamento/status?busca=${id}&oferta=${offer}`,
   },
   delivery: {
-    checkout: (id, offer) => `/encomenda/${id}/pagamento?oferta=${offer}`,
-    status: (id, offer) => `/encomenda/${id}/pagamento/status?oferta=${offer}`,
+    checkout: (id, offer) => `/encomenda/pagamento?id=${id}&oferta=${offer}`,
+    status: (id, offer) => `/encomenda/pagamento/status?id=${id}&oferta=${offer}`,
   },
 };

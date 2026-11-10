@@ -7,7 +7,6 @@ import Button from '@mui/material/Button';
 import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
-import AdSlot from '@/components/AdSlot';
 import RouteSummary from '@/features/activities/components/RouteSummary';
 
 interface SearchingViewProps {
@@ -109,8 +108,6 @@ export default function SearchingView({
       <Paper variant="outlined" sx={{ width: '100%', p: 2.5, borderRadius: 3 }}>
         <RouteSummary origin={originName} destination={destinationName} />
       </Paper>
-
-      <AdSlot adSlotId={process.env.NEXT_PUBLIC_ADSENSE_SLOT_WAITING} />
 
       <Button
         variant="outlined"

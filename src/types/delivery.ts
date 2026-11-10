@@ -7,6 +7,8 @@ export type PackageSize = 'envelope' | 'small' | 'medium' | 'large';
 export interface PackageDetails {
   size: PackageSize;
   description: string;
+  /** Vidro, eletrônicos, cerâmica...: o motorista manuseia com mais cuidado */
+  fragile: boolean;
   /** Valor declarado em centavos (opcional, para seguro/ressarcimento) */
   declaredValueCents?: number;
   recipientName: string;

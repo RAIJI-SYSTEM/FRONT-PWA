@@ -1,6 +1,6 @@
 import Stack from '@mui/material/Stack';
 import { ongoingActivitiesMock } from '@/features/activities/mocks';
-import DestinationSearch from '@/features/home/components/DestinationSearch';
+import SearchHub from '@/features/home/components/SearchHub';
 import OngoingActivities from '@/features/home/components/OngoingActivities';
 import QuickActions from '@/features/home/components/QuickActions';
 
@@ -10,7 +10,7 @@ export default function HomePage() {
 
   return (
     <Stack spacing={{ xs: 3, sm: 4 }}>
-      <DestinationSearch />
+      <SearchHub />
       <QuickActions />
       <OngoingActivities activities={activities} />
     </Stack>

@@ -2,21 +2,25 @@
 
 import { useEffect, useRef, useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
-import { ArrowLeft, ArrowRight, Search } from 'lucide-react';
+import { ArrowLeft, ArrowRight, ChevronDown, Search } from 'lucide-react';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
+import Fade from '@mui/material/Fade';
 import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
 import Step from '@mui/material/Step';
 import StepButton from '@mui/material/StepButton';
 import Stepper from '@mui/material/Stepper';
 import Typography from '@mui/material/Typography';
+import ActionBar from '@/components/ActionBar';
 import RouteSummary from '@/features/activities/components/RouteSummary';
+import { useHasMoreBelow } from '@/hooks/useHasMoreBelow';
 import { getDelivery, submitDeliveryDetails } from '@/services/deliveries';
 import type { Delivery } from '@/types/delivery';
 import type { Departure } from '@/types/ride';
+import { routes } from '@/utils/routes';
 import { EMPTY_FORM, parseMoney, STEPS, validateStep, type DetailsErrors, type DetailsForm, type StepKey } from './details/form';
 import PackageStep from './details/PackageStep';
 import RecipientStep from './details/RecipientStep';
@@ -42,6 +46,8 @@ export default function DeliveryDetailsScreen({ deliveryId }: { deliveryId: stri
   const [apiError, setApiError] = useState<string | null>(null);
   const [submitting, setSubmitting] = useState(false);
   const headingRef = useRef<HTMLHeadingElement>(null);
+  // Telas pequenas: avisa quando a etapa continua abaixo da barra de botões
+  const hasMoreBelow = useHasMoreBelow();
   const isFirstRender = useRef(true);
 
   const step = STEPS[activeStep];
@@ -51,7 +57,7 @@ export default function DeliveryDetailsScreen({ deliveryId }: { deliveryId: stri
     getDelivery(deliveryId)
       .then((data) => {
         // Dados já enviados: segue para o acompanhamento
-        if (data.status !== 'awaiting_details') router.replace(`/encomenda/${deliveryId}`);
+        if (data.status !== 'awaiting_details') router.replace(routes.delivery(deliveryId));
         else setDelivery(data);
       })
       .catch((err) => setLoadError(err instanceof Error ? err.message : 'Entrega não encontrada.'));
@@ -114,6 +120,7 @@ export default function DeliveryDetailsScreen({ deliveryId }: { deliveryId: stri
         details: {
           size: form.size,
           description: form.description.trim(),
+          fragile: form.fragile,
           declaredValueCents: parseMoney(form.declaredValue),
           recipientName: form.recipientName.trim(),
           recipientPhone: form.recipientPhone,
@@ -121,7 +128,7 @@ export default function DeliveryDetailsScreen({ deliveryId }: { deliveryId: stri
         },
         departure,
       });
-      router.push(`/encomenda/${deliveryId}`);
+      router.push(routes.delivery(deliveryId));
     } catch (err) {
       setApiError(err instanceof Error ? err.message : 'Não foi possível enviar os dados.');
       setSubmitting(false);
@@ -138,7 +145,8 @@ export default function DeliveryDetailsScreen({ deliveryId }: { deliveryId: stri
   }
 
   return (
-    <Box component="form" noValidate onSubmit={handleSubmit}>
+    // flex: 1 ocupa o resto da tela; a barra de ações (mt: auto) fica sempre no fim
+    <Box component="form" noValidate onSubmit={handleSubmit} sx={{ flex: 1, display: 'flex', flexDirection: 'column' }}>
       <Stepper nonLinear activeStep={activeStep} alternativeLabel sx={{ mb: 3, mx: -1 }}>
         {STEPS.map((s, index) => (
           <Step key={s.key} completed={index < furthestStep && index !== activeStep}>
@@ -188,19 +196,51 @@ export default function DeliveryDetailsScreen({ deliveryId }: { deliveryId: stri
         </Alert>
       )}
 
-      {/* Ações fixas no rodapé, ao alcance do polegar */}
-      <Box
-        sx={{
-          position: 'sticky',
-          bottom: 0,
-          mt: 3,
-          mx: { xs: -2, sm: -3 },
-          px: { xs: 2, sm: 3 },
-          py: 2,
-          bgcolor: 'background.default',
-          borderTop: 1,
-          borderColor: 'divider',
-        }}
+      {/* Ações fixas no rodapé, ao alcance do polegar; acima delas, o aviso de "tem mais abaixo"
+          (degradê sobre o conteúdo + atalho para descer) */}
+      <ActionBar
+        above={
+          <Fade in={hasMoreBelow}>
+            <Box
+              sx={{
+                position: 'absolute',
+                left: 0,
+                right: 0,
+                bottom: '100%',
+                height: 64,
+                display: 'flex',
+                alignItems: 'flex-end',
+                justifyContent: 'center',
+                pb: 1,
+                pointerEvents: 'none',
+                background: 'linear-gradient(to bottom, transparent, var(--mui-palette-background-default))',
+              }}
+            >
+              <Button
+                size="small"
+                variant="outlined"
+                color="inherit"
+                tabIndex={hasMoreBelow ? 0 : -1}
+                onClick={() => window.scrollBy({ top: window.innerHeight * 0.6, behavior: 'smooth' })}
+                endIcon={<ChevronDown size={16} />}
+                sx={{
+                  pointerEvents: hasMoreBelow ? 'auto' : 'none',
+                  borderRadius: 999,
+                  textTransform: 'none',
+                  fontWeight: 600,
+                  bgcolor: 'background.paper',
+                  borderColor: 'divider',
+                  boxShadow: 2,
+                  '@keyframes nudge': { '0%, 100%': { transform: 'translateY(0)' }, '50%': { transform: 'translateY(3px)' } },
+                  '& .MuiButton-endIcon': { animation: 'nudge 1.6s ease-in-out infinite' },
+                  '@media (prefers-reduced-motion: reduce)': { '& .MuiButton-endIcon': { animation: 'none' } },
+                }}
+              >
+                Mais abaixo
+              </Button>
+            </Box>
+          </Fade>
+        }
       >
         <Stack direction="row" spacing={1.5}>
           {activeStep > 0 && (
@@ -238,7 +278,7 @@ export default function DeliveryDetailsScreen({ deliveryId }: { deliveryId: stri
             </Button>
           )}
         </Stack>
-      </Box>
+      </ActionBar>
     </Box>
   );
 }

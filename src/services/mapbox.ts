@@ -14,7 +14,13 @@ interface GeocodingFeature {
 }
 
 /** Autocomplete de endereços (Mapbox Geocoding API v6), limitado ao Brasil */
-export async function searchPlaces(query: string, proximity?: LngLat, signal?: AbortSignal): Promise<Place[]> {
+export async function searchPlaces(
+  query: string,
+  proximity?: LngLat,
+  signal?: AbortSignal,
+  /** Tipos do Mapbox, ex.: "place" para buscar só cidades */
+  types?: string,
+): Promise<Place[]> {
   if (!MAPBOX_TOKEN || query.trim().length < 3) return [];
 
   const params = new URLSearchParams({
@@ -26,6 +32,7 @@ export async function searchPlaces(query: string, proximity?: LngLat, signal?: A
     limit: '6',
   });
   if (proximity) params.set('proximity', proximity.join(','));
+  if (types) params.set('types', types);
 
   const response = await fetch(`https://api.mapbox.com/search/geocode/v6/forward?${params}`, { signal });
   if (!response.ok) throw new Error('Falha ao buscar endereços.');
@@ -84,3 +91,6 @@ export async function getDrivingRoute(from: LngLat, to: LngLat, signal?: AbortSi
   const route = data.routes?.[0];
   return route ? { geometry: route.geometry, distanceMeters: route.distance, durationSeconds: route.duration } : null;
 }
+
+/** Autocomplete só de cidades (municípios) */
+export const searchCities = (query: string, signal?: AbortSignal) => searchPlaces(query, undefined, signal, 'place');

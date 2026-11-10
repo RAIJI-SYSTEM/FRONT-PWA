@@ -4,6 +4,7 @@ import { useState } from 'react';
 import dynamic from 'next/dynamic';
 import ButtonBase from '@mui/material/ButtonBase';
 import type { Attachment } from '@/types/message';
+import { apiUrl } from '@/services/api';
 
 const loadLightbox = () => import('./ImageLightbox');
 const ImageLightbox = dynamic(loadLightbox);
@@ -27,7 +28,7 @@ export default function ImageAttachment({ attachment }: { attachment: Attachment
       >
         {/* eslint-disable-next-line @next/next/no-img-element -- arquivo enviado pelo usuário, sem otimização do next/image */}
         <img
-          src={attachment.url}
+          src={apiUrl(attachment.url)}
           alt={attachment.name}
           loading="lazy"
           style={{ display: 'block', width: '100%', maxHeight: 280, objectFit: 'cover' }}

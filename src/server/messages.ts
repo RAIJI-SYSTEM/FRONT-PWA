@@ -7,6 +7,7 @@ import 'server-only';
 import {
   ME_ID,
   SYSTEM_ID,
+  type AppMode,
   type Attachment,
   type ChatMessage,
   type Conversation,
@@ -23,12 +24,17 @@ interface StoredConversation extends Omit<Conversation, 'lastMessage' | 'unreadC
 }
 
 const REPLY_DELAY_MS = 3000;
-const DRIVER_REPLIES = [
+/** Respostas simuladas de quem está do outro lado, conforme o papel */
+const REPLIES: Record<'driver' | 'passenger' | 'company', string[]> = {
+  passenger: ['Ok, te espero aqui!', 'Perfeito, obrigado!', 'Combinado 👍', 'Estou na portaria.'],
+  company: ['Recebido! O pacote já está separado.', 'Ok, pode vir buscar no balcão.', 'Obrigado pelo aviso!'],
+  driver: [
   'Combinado! 👍',
   'Certo, já estou a caminho.',
   'Sem problemas, te aviso quando chegar.',
   'Ok! Qualquer coisa me chama por aqui.',
-];
+  ],
+};
 
 const minutesAgo = (minutes: number) => new Date(Date.now() - minutes * 60_000).toISOString();
 
@@ -56,10 +62,16 @@ function seed(): Map<string, StoredConversation> {
   const joao: Participant = { id: 'joao', name: 'João Pedro', role: 'passenger' };
   const bia: Participant = { id: 'bia', name: 'Beatriz Lima', role: 'passenger' };
   const lima: Participant = { id: 'lima', name: 'Transportes Lima', role: 'driver' };
+  // Contatos do modo motorista
+  const lucas: Participant = { id: 'lucas', name: 'Lucas Andrade', role: 'passenger' };
+  const carla: Participant = { id: 'carla', name: 'Carla Nunes', role: 'passenger' };
+  const loja: Participant = { id: 'loja', name: 'Loja Parceira', role: 'company' };
+  const farmacia: Participant = { id: 'farmacia', name: 'Farmácia Central', role: 'company' };
 
   const conversations: StoredConversation[] = [
     {
       id: 'carlos-aeroporto',
+      mode: 'passenger',
       kind: 'driver',
       title: carlos.name,
       subtitle: 'Onix prata · ABC1D23',
@@ -75,6 +87,7 @@ function seed(): Map<string, StoredConversation> {
     },
     {
       id: 'grupo-campinas',
+      mode: 'passenger',
       kind: 'group',
       title: 'Viagem para Campinas',
       subtitle: '5 participantes',
@@ -95,6 +108,7 @@ function seed(): Map<string, StoredConversation> {
     },
     {
       id: 'lima-encomenda',
+      mode: 'passenger',
       kind: 'driver',
       title: lima.name,
       subtitle: 'Spin preta · RTY7U89',
@@ -108,13 +122,74 @@ function seed(): Map<string, StoredConversation> {
       ],
       lastReadAt: Date.now(),
     },
+
+    // ---------- Modo motorista ----------
+    {
+      id: 'mot-beatriz',
+      mode: 'driver',
+      kind: 'passenger',
+      title: bia.name,
+      subtitle: 'Passageira · nota 4,9',
+      participants: [me, bia],
+      context: { kind: 'ride', label: 'Corrida', origin: 'Av. Paulista, 1000', destination: 'Aeroporto de Congonhas', href: '/motorista/viagens' },
+      messages: [
+        message(SYSTEM_ID, 'Você aceitou a corrida de Beatriz', minutesAgo(15)),
+        message(bia.id, 'Oi! Estou com uma mala grande, tudo bem?', minutesAgo(12)),
+        message(ME_ID, 'Tudo bem, cabe no porta-malas.', minutesAgo(11)),
+        message(bia.id, 'Estou esperando na frente do prédio, de casaco azul.', minutesAgo(2)),
+      ],
+      lastReadAt: Date.now() - 11 * 60_000,
+    },
+    {
+      id: 'mot-grupo-campinas',
+      mode: 'driver',
+      kind: 'group',
+      title: 'Rota São Paulo → Campinas',
+      subtitle: '3 passageiros',
+      participants: [me, lucas, carla, joao],
+      context: { kind: 'ride', label: 'Sua rota publicada', origin: 'Metrô Barra Funda', destination: 'Campinas', href: '/motorista/rotas' },
+      messages: [
+        message(SYSTEM_ID, 'Grupo criado para os passageiros da sua rota', minutesAgo(240)),
+        message(ME_ID, 'Bom dia! Saída às 9h30 em ponto, na saída 2 do metrô.', minutesAgo(200)),
+        message(lucas.id, 'Combinado! Vou com uma mochila só.', minutesAgo(150)),
+        message(carla.id, 'Dá para me deixar perto da Unicamp?', minutesAgo(40)),
+      ],
+      lastReadAt: Date.now() - 150 * 60_000,
+    },
+    {
+      id: 'mot-loja-parceira',
+      mode: 'driver',
+      kind: 'company',
+      title: loja.name,
+      subtitle: 'Empresa · envia encomendas',
+      participants: [me, loja],
+      context: { kind: 'delivery', label: 'Encomenda grande', origin: 'R. 25 de Março, 800', destination: 'Guarulhos', href: '/motorista/viagens' },
+      messages: [
+        message(loja.id, 'Olá! O pacote é uma estante desmontada, 3 caixas.', minutesAgo(90)),
+        message(ME_ID, 'Certo, vou de van. Chego às 14h.', minutesAgo(85)),
+        message(loja.id, 'Perfeito, a nota fiscal vai junto com as caixas.', minutesAgo(30)),
+      ],
+      lastReadAt: Date.now() - 30 * 60_000,
+    },
+    {
+      id: 'mot-farmacia',
+      mode: 'driver',
+      kind: 'company',
+      title: farmacia.name,
+      subtitle: 'Empresa · entregas recorrentes',
+      participants: [me, farmacia],
+      messages: [
+        message(farmacia.id, 'Temos 4 entregas para o bairro amanhã cedo. Tem interesse?', minutesAgo(1300)),
+      ],
+      lastReadAt: Date.now() - 2000 * 60_000,
+    },
   ];
   return new Map(conversations.map((c) => [c.id, c]));
 }
 
 // A chave tem versão: ao mudar o formato dos dados de exemplo, troque-a para o `next dev` recriar tudo
-const globalStore = globalThis as unknown as { conversationsV2?: Map<string, StoredConversation> };
-const conversations = (globalStore.conversationsV2 ??= seed());
+const globalStore = globalThis as unknown as { conversationsV3?: Map<string, StoredConversation> };
+const conversations = (globalStore.conversationsV3 ??= seed());
 
 /** Entrega a resposta simulada quando o "tempo de digitação" passa */
 function deliverPendingReply(conversation: StoredConversation) {
@@ -136,8 +211,10 @@ function toSummary(conversation: StoredConversation): ConversationSummary {
   };
 }
 
-export function listConversations(): ConversationSummary[] {
+/** Conversas de um modo: as do passageiro e as do motorista ficam em caixas separadas */
+export function listConversations(mode: AppMode = 'passenger'): ConversationSummary[] {
   return [...conversations.values()]
+    .filter((c) => c.mode === mode)
     .map(toSummary)
     .sort((a, b) => Date.parse(b.lastMessage?.sentAt ?? '0') - Date.parse(a.lastMessage?.sentAt ?? '0'));
 }
@@ -166,12 +243,13 @@ export function sendMessage(id: string, text: string, attachments: Attachment[] 
   conversation.messages.push(sent);
   conversation.lastReadAt = Date.now();
 
-  // Simulação: o motorista responde alguns segundos depois
-  const driver = conversation.participants.find((p) => p.role === 'driver');
-  if (conversation.kind === 'driver' && driver && !conversation.pendingReply) {
+  // Simulação: em conversa direta, quem está do outro lado (motorista, passageiro ou empresa) responde
+  const other = conversation.participants.find((p) => p.id !== ME_ID);
+  if (conversation.kind !== 'group' && other && other.role !== 'me' && !conversation.pendingReply) {
+    const replies = REPLIES[other.role];
     conversation.pendingReply = {
-      senderId: driver.id,
-      text: attachments.length > 0 && !text ? 'Recebi, obrigado!' : DRIVER_REPLIES[Math.floor(Math.random() * DRIVER_REPLIES.length)],
+      senderId: other.id,
+      text: attachments.length > 0 && !text ? 'Recebi, obrigado!' : replies[Math.floor(Math.random() * replies.length)],
       at: Date.now() + REPLY_DELAY_MS,
     };
   }

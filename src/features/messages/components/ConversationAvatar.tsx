@@ -7,7 +7,11 @@ import { participantColor } from '../participantColor';
 
 export function ParticipantAvatar({ participant, size = 40 }: { participant: Participant; size?: number }) {
   return (
-    <Avatar sx={{ width: size, height: size, bgcolor: participantColor(participant.id), color: '#fff', fontWeight: 700, fontSize: size * 0.42 }}>
+    <Avatar
+      // Empresas com avatar quadrado, para diferenciar de pessoas
+      variant={participant.role === 'company' ? 'rounded' : 'circular'}
+      sx={{ width: size, height: size, bgcolor: participantColor(participant.id), color: '#fff', fontWeight: 700, fontSize: size * 0.42, borderRadius: participant.role === 'company' ? 1 : undefined }}
+    >
       {participant.name.charAt(0)}
     </Avatar>
   );
@@ -17,7 +21,7 @@ export function ParticipantAvatar({ participant, size = 40 }: { participant: Par
 export default function ConversationAvatar({ conversation, size = 52 }: { conversation: ConversationSummary; size?: number }) {
   const others = conversation.participants.filter((p) => p.id !== ME_ID);
 
-  if (conversation.kind === 'driver') {
+  if (conversation.kind !== 'group') {
     return <ParticipantAvatar participant={others[0]} size={size} />;
   }
 

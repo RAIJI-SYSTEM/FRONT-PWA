@@ -19,3 +19,11 @@ export const MAX_RATING_COMMENT = 300;
 
 export const tagsFor = (kind: HistoryKind, stars: number) =>
   stars >= 4 ? RATING_TAGS[kind].praise : RATING_TAGS[kind].issues;
+
+/** Etiquetas quando o motorista avalia o passageiro/remetente */
+export const CUSTOMER_RATING_TAGS = {
+  praise: ['Pontual', 'Educado', 'Respeitoso', 'Pacote bem embalado', 'Boa comunicação'],
+  issues: ['Atrasou', 'Desrespeitoso', 'Sujou o veículo', 'Pacote mal embalado', 'Endereço errado'],
+};
+
+export const customerTagsFor = (stars: number) => (stars >= 4 ? CUSTOMER_RATING_TAGS.praise : CUSTOMER_RATING_TAGS.issues);

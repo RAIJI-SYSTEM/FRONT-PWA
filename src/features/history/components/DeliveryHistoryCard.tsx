@@ -1,7 +1,7 @@
 'use client';
 
 import { memo } from 'react';
-import { Package, User } from 'lucide-react';
+import { Package, User, Wine } from 'lucide-react';
 import Chip from '@mui/material/Chip';
 import Typography from '@mui/material/Typography';
 import { PACKAGE_SIZES } from '@/features/delivery/packageSizes';
@@ -35,6 +35,7 @@ function DeliveryHistoryCard({ delivery, onRate }: DeliveryHistoryCardProps) {
         <>
           <Typography sx={{ fontWeight: 700, mr: 0.5 }}>{canceled ? 'Sem cobrança' : formatCurrency(delivery.priceCents)}</Typography>
           {size && <Chip label={size.label} size="small" variant="outlined" />}
+          {delivery.fragile && <Chip icon={<Wine size={14} />} label="Frágil" size="small" color="primary" variant="outlined" />}
           <Chip icon={<User size={14} />} label={delivery.recipientName} size="small" variant="outlined" />
         </>
       }

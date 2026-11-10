@@ -17,6 +17,7 @@ import type { RideOffer } from '@/types/ride';
 import { formatDate, formatTime } from '@/utils/formatDate';
 import { useDelivery } from '../hooks/useDelivery';
 import DeliveryKeyword from './DeliveryKeyword';
+import { routes } from '@/utils/routes';
 
 const pillButton = { height: 52, borderRadius: 999, textTransform: 'none', fontWeight: 600 } as const;
 
@@ -61,7 +62,7 @@ export default function DeliveryScreen({ deliveryId }: { deliveryId: string }) {
           title="Faltam os dados do pacote"
           description="Informe o tamanho do pacote e quem vai receber para procurarmos um motorista."
           actions={
-            <Button component={Link} href={`/encomenda/${deliveryId}/produto`} variant="contained" sx={pillButton}>
+            <Button component={Link} href={routes.deliveryDetails(deliveryId)} variant="contained" sx={pillButton}>
               Informar dados do pacote
             </Button>
           }

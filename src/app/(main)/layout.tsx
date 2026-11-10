@@ -14,7 +14,7 @@ export default function MainLayout({ children }: { children: React.ReactNode }) 
           'linear-gradient(180deg, rgba(var(--mui-palette-primary-mainChannel) / 0.28) 0%, transparent 320px)',
       }}
     >
-      <Header userName="Pablo" location="São Paulo, SP" notificationsCount={1} />
+      <Header userName="Pablo" location="São Paulo, SP" />
       {/* padding inferior para o conteúdo não ficar escondido atrás do Footer fixo */}
       <Container maxWidth="md" component="main" sx={{ px: { xs: 2, sm: 3 }, pt: 1, pb: { xs: 12, sm: 15 } }}>
         {children}

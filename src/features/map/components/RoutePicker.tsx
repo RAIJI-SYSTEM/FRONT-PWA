@@ -12,6 +12,7 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import FlowTopBar from '@/components/FlowTopBar';
 import PlaceAutocomplete from '@/features/ride/components/PlaceAutocomplete';
+import { useLockPageScroll } from '@/hooks/useLockPageScroll';
 import { getDrivingRoute, reverseGeocode, type DrivingRoute } from '@/services/mapbox';
 import type { LngLat, Place } from '@/types/place';
 import RideMap, { type MapPadding, type PickTarget } from './RideMap';
@@ -59,6 +60,7 @@ const DEFAULT_LABELS = {
  * ele) e confirma cada ponto. Usado por viagens e encomendas.
  */
 export default function RoutePicker({ title, backHref, labels = DEFAULT_LABELS, renderReview, onSubmit, error }: RoutePickerProps) {
+  useLockPageScroll();
   const [step, setStep] = useState<Step>('origin');
   const [origin, setOrigin] = useState<Place | null>(null);
   const [destination, setDestination] = useState<Place | null>(null);
