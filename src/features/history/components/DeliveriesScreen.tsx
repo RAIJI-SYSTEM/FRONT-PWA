@@ -32,7 +32,7 @@ type RatingFilter = 'all' | 'unrated' | 'rated';
 
 const STATUS_GROUPS: Record<StatusFilter, { label: string; includes: (s: DeliveryHistoryStatus) => boolean }> = {
   all: { label: 'Todas', includes: () => true },
-  active: { label: 'A caminho', includes: (s) => s === 'awaiting_pickup' || s === 'in_transit' },
+  active: { label: 'A caminho', includes: (s) => s === 'requested' || s === 'awaiting_pickup' || s === 'in_transit' },
   delivered: { label: 'Entregues', includes: (s) => s === 'delivered' },
   canceled: { label: 'Canceladas', includes: (s) => s === 'canceled' },
 };

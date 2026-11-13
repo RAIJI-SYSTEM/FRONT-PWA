@@ -9,7 +9,6 @@ import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
 import Stack from '@mui/material/Stack';
 import StatusScreen from '@/components/StatusScreen';
-import { paymentPaths } from '@/features/payment/paths';
 import { cancelRideSearch } from '@/services/rideSearch';
 import type { RideOffer } from '@/types/ride';
 import { formatDate, formatTime } from '@/utils/formatDate';
@@ -35,7 +34,8 @@ export default function RideSearchScreen({ searchId }: { searchId: string }) {
     }
   };
 
-  const handleContinue = (offer: RideOffer) => router.push(paymentPaths.ride.checkout(searchId, offer.id));
+  const handleContinue = (offer: RideOffer) =>
+    router.push(`/viagem/pedido?busca=${encodeURIComponent(searchId)}&carona=${encodeURIComponent(offer.id)}`);
 
   if (!search) {
     return error ? (
@@ -91,11 +91,13 @@ export default function RideSearchScreen({ searchId }: { searchId: string }) {
         <StatusScreen
           icon={SearchX}
           tone="error"
-          title={search.status === 'canceled' ? 'Busca cancelada' : 'Nenhum motorista disponível'}
+          title={search.status === 'canceled' ? 'Busca cancelada' : 'Nenhuma carona nesse caminho'}
           description={
             search.status === 'canceled'
               ? 'Você cancelou esta busca.'
-              : 'Não encontramos motoristas para essa rota agora. Tente novamente em alguns minutos ou agende a carona.'
+              : search.departure.type === 'now'
+                ? 'Nenhum motorista sai na próxima hora passando por esse caminho. Tente outro horário ou agende a carona.'
+                : 'Nenhum motorista publicou carona passando por esse caminho nesse horário. Tente outro horário.'
           }
           actions={
             <>

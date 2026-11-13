@@ -58,6 +58,7 @@ export default function ReviewStep({ form, onEdit }: ReviewStepProps) {
         </Typography>
         <Typography variant="body2" color="text.secondary">
           {size?.hint}
+          {form.weight ? ` · ${form.weight} kg` : ''}
           {declared ? ` · valor declarado ${formatCurrency(declared)}` : ''}
         </Typography>
       </ReviewItem>

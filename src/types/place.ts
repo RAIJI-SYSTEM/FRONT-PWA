@@ -7,5 +7,7 @@ export interface Place {
   address: string;
   /** Município, usado para saber se a rota é intermunicipal */
   city?: string;
+  /** UF (ex.: "SP") */
+  state?: string;
   coordinates: LngLat;
 }

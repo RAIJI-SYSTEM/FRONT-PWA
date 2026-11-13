@@ -10,7 +10,6 @@ import type {
   DriverAccount,
   DriverJob,
   DriverRoute,
-  NewDriverRoute,
   RegionRequest,
   Vehicle,
 } from '@/types/driverMode';
@@ -165,7 +164,10 @@ export function removeVehicle(id: string) {
 
 export const listRoutes = () => [...store.routes].sort((a, b) => Date.parse(a.departureAt) - Date.parse(b.departureAt));
 
-export function publishRoute(input: Partial<NewDriverRoute>) {
+/** Formato antigo da rota (só desta simulação; o app usa o backend) */
+export type LegacyNewDriverRoute = Omit<DriverRoute, 'id' | 'seatsTaken' | 'status'>;
+
+export function publishRoute(input: Partial<LegacyNewDriverRoute>) {
   requireApproved();
   const vehicle = store.account.vehicles.find((v) => v.id === input.vehicleId);
   const seats = Number(input.seats);

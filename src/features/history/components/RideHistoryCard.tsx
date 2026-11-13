@@ -1,7 +1,9 @@
 'use client';
 
 import { memo } from 'react';
-import { Car, CreditCard, QrCode, Users } from 'lucide-react';
+import Link from 'next/link';
+import { Briefcase, Car, CreditCard, QrCode, Users } from 'lucide-react';
+import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
 import Typography from '@mui/material/Typography';
 import type { RideHistoryItem } from '@/types/history';
@@ -34,11 +36,29 @@ function RideHistoryCard({ ride, onRate }: RideHistoryCardProps) {
         <>
           <Typography sx={{ fontWeight: 700, mr: 0.5 }}>{canceled ? 'Sem cobrança' : formatCurrency(ride.priceCents)}</Typography>
           <Typography variant="body2" color="text.secondary">
-            {ride.distanceKm.toFixed(1).replace('.', ',')} km
+            {ride.distanceKm > 0 ? `${ride.distanceKm.toFixed(1).replace('.', ',')} km` : ''}
           </Typography>
           {ride.shared && <Chip icon={<Users size={14} />} label="Compartilhada" size="small" variant="outlined" />}
-          {!canceled && (
+          {!canceled && ride.status !== 'requested' && ride.priceCents > 0 && (
             <Chip icon={<PaymentIcon size={14} />} label={ride.paymentMethod === 'pix' ? 'Pix' : 'Cartão'} size="small" variant="outlined" />
+          )}
+          {ride.baggageSummary && (
+            <Chip
+              icon={<Briefcase size={14} />}
+              label={ride.baggagePending ? `${ride.baggageSummary} · alteração pendente` : ride.baggageSummary}
+              size="small"
+              variant="outlined"
+            />
+          )}
+          {ride.bookingId && ride.rideId && (ride.status === 'requested' || ride.status === 'scheduled') && (
+            <Button
+              size="small"
+              component={Link}
+              href={`/viagem/reserva?id=${encodeURIComponent(ride.bookingId)}&carona=${encodeURIComponent(ride.rideId)}`}
+              sx={{ borderRadius: 999, textTransform: 'none', fontWeight: 600 }}
+            >
+              Detalhes e bagagem
+            </Button>
           )}
         </>
       }

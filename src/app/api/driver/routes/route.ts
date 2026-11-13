@@ -1,6 +1,6 @@
 import { listRoutes, publishRoute } from '@/server/driverMode';
 import { handleDriverAction, readJson } from '@/server/driverModeHttp';
-import type { NewDriverRoute } from '@/types/driverMode';
+import type { LegacyNewDriverRoute as NewDriverRoute } from '@/server/driverMode';
 
 export async function GET() {
   return Response.json(listRoutes());

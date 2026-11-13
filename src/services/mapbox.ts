@@ -7,9 +7,10 @@ interface GeocodingFeature {
   geometry: { coordinates: LngLat };
   properties: {
     name: string;
+    feature_type?: string;
     full_address?: string;
     place_formatted?: string;
-    context?: { place?: { name: string } };
+    context?: { place?: { name: string }; region?: { name: string; region_code?: string } };
   };
 }
 
@@ -67,7 +68,8 @@ function toPlace({ id, geometry, properties }: GeocodingFeature): Place {
     id,
     name: properties.name,
     address: properties.place_formatted ?? properties.full_address ?? '',
-    city: properties.context?.place?.name,
+    city: properties.context?.place?.name ?? (properties.feature_type === 'place' ? properties.name : undefined),
+    state: properties.context?.region?.region_code?.toUpperCase(),
     coordinates: geometry.coordinates,
   };
 }

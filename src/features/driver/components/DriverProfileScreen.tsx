@@ -20,7 +20,7 @@ import { ApiError } from '@/services/api';
 import { addVehicle, getDriverAccount, removeVehicle, saveCnh, updateVehicle } from '@/services/driverMode';
 import type { DriverAccount, Vehicle, VehicleType } from '@/types/driverMode';
 import { clearFieldErrors, formatPlate, validateCnh, validateVehicle } from '@/utils/driverValidation';
-import CnhForm, { type CnhDraft } from './CnhForm';
+import CnhVerificationForm, { EMPTY_CNH_VERIFICATION, validateCnhVerification, type CnhVerificationDraft } from './CnhVerificationForm';
 import VehicleForm, { draftToVehicle, EMPTY_VEHICLE, vehicleToDraft, type VehicleDraft } from './VehicleForm';
 import { apiUrl } from '@/services/api';
 
@@ -111,10 +111,7 @@ export default function DriverProfileScreen() {
             <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
               <IdCard size={28} color="var(--mui-palette-primary-main)" />
               <Box sx={{ flex: 1 }}>
-                {/* Número mascarado: só os 4 últimos dígitos ficam visíveis */}
-                <Typography sx={{ fontWeight: 700, fontFamily: 'monospace', letterSpacing: 1 }}>
-                  •••••••{cnh.number.slice(-4)}
-                </Typography>
+                <Typography sx={{ fontWeight: 700 }}>CNH verificada no SENATRAN</Typography>
                 <Typography variant="body2" color="text.secondary">
                   Categoria {cnh.category} · válida até {new Date(`${cnh.expiresAt}T12:00:00`).toLocaleDateString('pt-BR')}
                 </Typography>
@@ -227,7 +224,6 @@ export default function DriverProfileScreen() {
 
       {editing?.kind === 'cnh' && (
         <CnhDialog
-          initial={cnh ? { ...cnh } : undefined}
           onClose={() => setEditing(null)}
           onSaved={(updated) => {
             setData(updated);
@@ -272,43 +268,30 @@ function FormDialog({ title, saving, error, onClose, onSave, children }: { title
   );
 }
 
-function CnhDialog({ initial, onClose, onSaved }: { initial?: CnhDraft; onClose: () => void; onSaved: (account: DriverAccount) => void }) {
-  const [cnh, setCnh] = useState<CnhDraft>(initial ?? { number: '', category: null, expiresAt: '', ear: false });
+function CnhDialog({ onClose, onSaved }: { onClose: () => void; onSaved: (account: DriverAccount) => void }) {
+  const [cnh, setCnh] = useState<CnhVerificationDraft>(EMPTY_CNH_VERIFICATION);
   const [errors, setErrors] = useState<Record<string, string | undefined>>({});
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
   const save = async () => {
-    const found: Record<string, string | undefined> = {
-      ...validateCnh({ ...cnh, category: cnh.category ?? undefined }),
-      frontPhoto: cnh.frontPhoto ? undefined : 'Envie a foto da frente.',
-      backPhoto: cnh.backPhoto ? undefined : 'Envie a foto do verso.',
-    };
+    const found: Record<string, string | undefined> = validateCnhVerification(cnh);
     setErrors(found);
     if (Object.values(found).some(Boolean)) return;
     setSaving(true);
     setError(null);
     try {
-      onSaved(
-        await saveCnh({
-          number: cnh.number,
-          category: cnh.category ?? undefined,
-          expiresAt: cnh.expiresAt,
-          ear: cnh.ear,
-          frontPhotoId: cnh.frontPhoto?.id,
-          backPhotoId: cnh.backPhoto?.id,
-        }),
-      );
+      onSaved(await saveCnh({ image: cnh.photo!, securityCode: cnh.securityCode }));
     } catch (err) {
       if (err instanceof ApiError && err.fields) setErrors(err.fields);
-      setError(err instanceof Error ? err.message : 'Não foi possível salvar.');
+      setError(err instanceof Error ? err.message : 'Não foi possível enviar.');
       setSaving(false);
     }
   };
 
   return (
-    <FormDialog title="Editar CNH" saving={saving} error={error} onClose={onClose} onSave={save}>
-      <CnhForm
+    <FormDialog title="Reenviar CNH" saving={saving} error={error} onClose={onClose} onSave={save}>
+      <CnhVerificationForm
         value={cnh}
         onChange={(changes) => {
           setCnh((c) => ({ ...c, ...changes }));

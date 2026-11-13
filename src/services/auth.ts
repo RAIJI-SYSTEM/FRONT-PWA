@@ -240,6 +240,19 @@ export async function getAccessToken(): Promise<string | null> {
   return (await refreshing).accessToken;
 }
 
+/**
+ * Renova o token AGORA (ex.: logo depois da CNH ser aprovada, para o token já
+ * trazer a permissão de motorista).
+ */
+export async function forceRefreshSession(): Promise<Session | null> {
+  const session = getSession();
+  if (!session) return null;
+  refreshing ??= refreshSession(session).finally(() => {
+    refreshing = null;
+  });
+  return refreshing;
+}
+
 /** Sai: apaga a sessão local e encerra a sessão no Keycloak (sem abrir página nenhuma) */
 export async function signOut() {
   const session = getSession();

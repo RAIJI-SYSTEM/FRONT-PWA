@@ -21,7 +21,7 @@ import { getDelivery, submitDeliveryDetails } from '@/services/deliveries';
 import type { Delivery } from '@/types/delivery';
 import type { Departure } from '@/types/ride';
 import { routes } from '@/utils/routes';
-import { EMPTY_FORM, parseMoney, STEPS, validateStep, type DetailsErrors, type DetailsForm, type StepKey } from './details/form';
+import { EMPTY_FORM, parseMoney, parseWeight, STEPS, validateStep, type DetailsErrors, type DetailsForm, type StepKey } from './details/form';
 import PackageStep from './details/PackageStep';
 import RecipientStep from './details/RecipientStep';
 import ReviewStep from './details/ReviewStep';
@@ -122,6 +122,7 @@ export default function DeliveryDetailsScreen({ deliveryId }: { deliveryId: stri
           description: form.description.trim(),
           fragile: form.fragile,
           declaredValueCents: parseMoney(form.declaredValue),
+          weightKg: parseWeight(form.weight),
           recipientName: form.recipientName.trim(),
           recipientPhone: form.recipientPhone,
           notes: form.notes.trim() || undefined,

@@ -1,6 +1,9 @@
 import type { DepartureMode } from '@/features/ride/components/DepartureSelector';
 import type { PackageSize } from '@/types/delivery';
+import { MAX_WEIGHT_KG } from '@/features/delivery/packageSizes';
 import { parseMoney } from '@/utils/money';
+
+export const parseWeight = (value: string) => Number(value.replace(',', '.'));
 
 /** Estado do questionário de dados do pacote, compartilhado entre as etapas */
 export interface DetailsForm {
@@ -8,6 +11,7 @@ export interface DetailsForm {
   description: string;
   fragile: boolean;
   declaredValue: string;
+  weight: string;
   recipientName: string;
   recipientPhone: string;
   notes: string;
@@ -23,6 +27,7 @@ export const EMPTY_FORM: DetailsForm = {
   description: '',
   fragile: false,
   declaredValue: '',
+  weight: '',
   recipientName: '',
   recipientPhone: '',
   notes: '',
@@ -50,6 +55,10 @@ export function validateStep(step: StepKey, form: DetailsForm): DetailsErrors {
     if (!form.size) errors.size = 'Escolha o tamanho do pacote.';
     if (!form.description.trim()) errors.description = 'Conte o que você está enviando.';
     if (Number.isNaN(parseMoney(form.declaredValue))) errors.declaredValue = 'Valor inválido.';
+    const weight = parseWeight(form.weight);
+    if (!form.weight || !Number.isFinite(weight) || weight <= 0) errors.weight = 'Informe o peso aproximado.';
+    else if (form.size && weight > MAX_WEIGHT_KG[form.size])
+      errors.weight = `Até ${MAX_WEIGHT_KG[form.size]} kg nesse tamanho. Escolha um tamanho maior.`;
   }
   if (step === 'recipient') {
     if (!form.recipientName.trim()) errors.recipientName = 'Informe quem vai receber.';

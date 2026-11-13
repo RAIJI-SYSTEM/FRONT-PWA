@@ -15,10 +15,12 @@ interface OfferListProps {
   onContinue: (offer: RideOffer) => void;
   /** Ex.: ['motorista', 'motoristas'] ou ['opção de entrega', 'opções de entrega'] */
   noun?: [singular: string, plural: string];
+  /** Texto do botão (padrão: "Pedir vaga") */
+  actionLabel?: string;
 }
 
 /** "Escolher o melhor trajeto": as ofertas já vêm ordenadas por preço */
-export default function OfferList({ offers, onContinue, noun = ['motorista', 'motoristas'] }: OfferListProps) {
+export default function OfferList({ offers, onContinue, noun = ['carona', 'caronas'], actionLabel = 'Pedir vaga' }: OfferListProps) {
   const [selectedId, setSelectedId] = useState(offers[0]?.id);
   const selected = offers.find((offer) => offer.id === selectedId);
   const fastestId = offers.reduce((a, b) => (b.etaMinutes < a.etaMinutes ? b : a), offers[0])?.id;
@@ -30,7 +32,7 @@ export default function OfferList({ offers, onContinue, noun = ['motorista', 'mo
           {offers.length === 1 ? `1 ${noun[0]} disponível` : `${offers.length} ${noun[1]} disponíveis`}
         </Typography>
         <Typography variant="body2" color="text.secondary">
-          Escolha a melhor opção para você
+          Motoristas que já vão fazer esse caminho. O preço é do motorista.
         </Typography>
       </Box>
 
@@ -55,7 +57,7 @@ export default function OfferList({ offers, onContinue, noun = ['motorista', 'mo
           endIcon={<ArrowRight size={20} />}
           sx={{ height: 56, borderRadius: 999, fontSize: '1rem', fontWeight: 600, textTransform: 'none', boxShadow: 3 }}
         >
-          Continuar para pagamento
+          {actionLabel}
         </Button>
       </ActionBar>
     </Stack>

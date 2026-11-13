@@ -32,7 +32,7 @@ type PaymentFilter = 'all' | 'card' | 'pix';
 
 const STATUS_GROUPS: Record<StatusFilter, { label: string; includes: (s: RideHistoryStatus) => boolean }> = {
   all: { label: 'Todas', includes: () => true },
-  active: { label: 'Em andamento', includes: (s) => s === 'scheduled' || s === 'in_progress' },
+  active: { label: 'Em andamento', includes: (s) => s === 'requested' || s === 'scheduled' || s === 'in_progress' },
   completed: { label: 'Concluídas', includes: (s) => s === 'completed' },
   canceled: { label: 'Canceladas', includes: (s) => s === 'canceled' },
 };

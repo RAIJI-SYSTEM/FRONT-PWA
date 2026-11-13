@@ -1,7 +1,7 @@
 'use client';
 
 import { memo } from 'react';
-import { Car, Clock, Package, Star, Users, Wine, X, Check } from 'lucide-react';
+import { Briefcase, Car, Clock, Package, Route, Star, Users, Wine, X, Check } from 'lucide-react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
@@ -51,12 +51,16 @@ function RequestCard({ request, busy, onRespond }: RequestCardProps) {
         </Box>
         <Box sx={{ flex: 1, minWidth: 0 }}>
           <Typography sx={{ fontWeight: 700 }} noWrap>
-            {isRide ? 'Corrida' : 'Encomenda'} · {request.customerName}
+            {request.baggageChange ? 'Mudança de bagagem' : isRide ? 'Vaga' : 'Encomenda'} · {request.customerName}
           </Typography>
           <Stack direction="row" spacing={0.5} sx={{ alignItems: 'center', color: 'text.secondary' }}>
-            <Star size={12} fill="var(--mui-palette-primary-main)" color="var(--mui-palette-primary-main)" />
-            <Typography variant="caption">{request.customerRating.toFixed(1).replace('.', ',')}</Typography>
-            <Clock size={12} style={{ marginLeft: 6 }} />
+            {request.customerRating > 0 && (
+              <>
+                <Star size={12} fill="var(--mui-palette-primary-main)" color="var(--mui-palette-primary-main)" />
+                <Typography variant="caption">{request.customerRating.toFixed(1).replace('.', ',')}</Typography>
+              </>
+            )}
+            <Clock size={12} style={{ marginLeft: request.customerRating > 0 ? 6 : 0 }} />
             <Typography variant="caption" noWrap>
               {when}
             </Typography>
@@ -78,6 +82,8 @@ function RequestCard({ request, busy, onRespond }: RequestCardProps) {
         )}
         {size && <Chip size="small" variant="outlined" label={`${size.label} · ${size.hint}`} />}
         {request.fragile && <Chip size="small" color="primary" icon={<Wine size={14} />} label="Frágil" />}
+        {request.segment && <Chip size="small" variant="outlined" icon={<Route size={14} />} label="Trecho" />}
+        {request.cargoSummary && <Chip size="small" variant="outlined" icon={<Briefcase size={14} />} label={request.cargoSummary} />}
       </Stack>
 
       <Divider sx={{ my: 1.5 }} />

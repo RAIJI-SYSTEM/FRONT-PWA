@@ -1,9 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ArrowRight, CircleCheck, ShieldCheck } from 'lucide-react';
+import { ArrowRight, CircleCheck, Hourglass, ShieldCheck } from 'lucide-react';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -16,10 +16,11 @@ import Typography from '@mui/material/Typography';
 import ActionBar from '@/components/ActionBar';
 import StatusScreen from '@/components/StatusScreen';
 import { usePolling } from '@/hooks/usePolling';
+import { forceRefreshSession } from '@/services/auth';
 import { addVehicle, getDriverAccount, saveCnh } from '@/services/driverMode';
 import type { DriverAccount } from '@/types/driverMode';
-import { clearFieldErrors, validateCnh, validateVehicle } from '@/utils/driverValidation';
-import CnhForm, { EMPTY_CNH, type CnhDraft } from './CnhForm';
+import { clearFieldErrors, validateVehicle } from '@/utils/driverValidation';
+import CnhVerificationForm, { EMPTY_CNH_VERIFICATION, validateCnhVerification, type CnhVerificationDraft } from './CnhVerificationForm';
 import VehicleForm, { draftToVehicle, EMPTY_VEHICLE, type VehicleDraft } from './VehicleForm';
 
 type Step = 'cnh' | 'vehicle' | 'done';
@@ -28,22 +29,35 @@ const STEPS: { key: Exclude<Step, 'done'>; label: string; title: string }[] = [
   { key: 'vehicle', label: 'Veículo', title: 'Seu veículo' },
 ];
 
-const loadOnce = () => false;
+/** Enquanto a CNH está em verificação, consulta a cada 4s */
+const whileInReview = (account: DriverAccount) => account.status === 'in_review';
 const pillButton = { height: 52, borderRadius: 999, fontSize: '1rem', fontWeight: 600, textTransform: 'none' } as const;
 
-/** Continua de onde parou: sem CNH → CNH; sem veículo → veículo; tudo pronto → concluído */
-const firstStep = (account: DriverAccount): Step => (!account.cnh ? 'cnh' : account.vehicles.length === 0 ? 'vehicle' : 'done');
+/** Continua de onde parou: sem CNH aprovada → CNH; sem veículo → veículo; tudo pronto → concluído */
+const firstStep = (account: DriverAccount): Step =>
+  account.status !== 'approved' ? 'cnh' : account.vehicles.length === 0 ? 'vehicle' : 'done';
 
-/** Cadastro para virar motorista: CNH (com EAR e fotos) e o primeiro veículo */
+/**
+ * Cadastro para virar motorista: CNH (verificação automática no SENATRAN — segundos)
+ * e, depois de aprovada, o primeiro veículo.
+ */
 export default function DriverOnboardingScreen() {
   const router = useRouter();
-  const { data: account, error: loadError } = usePolling('driver-account', getDriverAccount, loadOnce);
+  // Trocar a chave recomeça a consulta (ex.: depois de enviar a CNH)
+  const [round, setRound] = useState(0);
+  const { data: account, error: loadError } = usePolling(`driver-account:${round}`, getDriverAccount, whileInReview, 4_000);
   const [step, setStep] = useState<Step | null>(null);
-  const [cnh, setCnh] = useState<CnhDraft>(EMPTY_CNH);
+  const [cnh, setCnh] = useState<CnhVerificationDraft>(EMPTY_CNH_VERIFICATION);
   const [vehicle, setVehicle] = useState<VehicleDraft>(EMPTY_VEHICLE);
   const [errors, setErrors] = useState<Record<string, string | undefined>>({});
   const [apiError, setApiError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+
+  const approved = account?.status === 'approved';
+  // CNH aprovada: renova o token para ele já trazer a permissão de motorista
+  useEffect(() => {
+    if (approved) forceRefreshSession().catch(() => undefined);
+  }, [approved]);
 
   if (loadError) return <Alert severity="error">{loadError}</Alert>;
   if (!account) {
@@ -56,14 +70,22 @@ export default function DriverOnboardingScreen() {
 
   const current = step ?? firstStep(account);
 
+  if (account.status === 'in_review') {
+    return (
+      <StatusScreen
+        icon={Hourglass}
+        title="Verificando sua CNH"
+        description="Estamos conferindo seus dados no SENATRAN. Costuma levar menos de um minuto — pode esperar aqui."
+      >
+        <CircularProgress />
+      </StatusScreen>
+    );
+  }
+
   const save = async () => {
     setApiError(null);
     if (current === 'cnh') {
-      const found: Record<string, string | undefined> = {
-        ...validateCnh({ ...cnh, category: cnh.category ?? undefined }),
-        frontPhoto: cnh.frontPhoto ? undefined : 'Envie a foto da frente.',
-        backPhoto: cnh.backPhoto ? undefined : 'Envie a foto do verso.',
-      };
+      const found: Record<string, string | undefined> = validateCnhVerification(cnh);
       setErrors(found);
       if (Object.values(found).some(Boolean)) return;
     } else {
@@ -75,15 +97,10 @@ export default function DriverOnboardingScreen() {
     setSaving(true);
     try {
       if (current === 'cnh') {
-        await saveCnh({
-          number: cnh.number,
-          category: cnh.category ?? undefined,
-          expiresAt: cnh.expiresAt,
-          ear: cnh.ear,
-          frontPhotoId: cnh.frontPhoto?.id,
-          backPhotoId: cnh.backPhoto?.id,
-        });
-        setStep('vehicle');
+        // Vai para "verificando" e o app acompanha até aprovar ou recusar
+        await saveCnh({ image: cnh.photo!, securityCode: cnh.securityCode });
+        setStep(null);
+        setRound((r) => r + 1);
       } else {
         await addVehicle(draftToVehicle(vehicle));
         setStep('done');
@@ -138,8 +155,14 @@ export default function DriverOnboardingScreen() {
         <Typography variant="body2">Seus dados são usados só para verificar o cadastro.</Typography>
       </Stack>
 
+      {current === 'cnh' && account.review && (account.review.status === 'REJECTED' || account.review.status === 'ERROR') && (
+        <Alert severity={account.review.status === 'ERROR' ? 'warning' : 'error'} sx={{ mb: 2 }}>
+          {account.review.reason ?? 'Não deu para verificar sua CNH.'} Você pode enviar de novo.
+        </Alert>
+      )}
+
       {current === 'cnh' ? (
-        <CnhForm
+        <CnhVerificationForm
           value={cnh}
           onChange={(changes) => {
             setCnh((c) => ({ ...c, ...changes }));

@@ -126,7 +126,7 @@ export default function DriverWorkScreen({ kind, initialTab }: { kind: WorkKind;
         </Typography>
         <Typography variant="body2" color="text.secondary" aria-live="polite">
           {tab === 'regiao'
-            ? `${requests.length} ${requests.length === 1 ? copy.noun : copy.plural} na região${potential > 0 ? ` · até ${formatCurrency(potential)}` : ''}`
+            ? `${requests.length} ${requests.length === 1 ? 'pedido' : 'pedidos'} nas suas viagens${potential > 0 ? ` · até ${formatCurrency(potential)}` : ''}`
             : `${formatCurrency(earned)} em ${copy.plural} concluídas`}
         </Typography>
       </Stack>
@@ -148,7 +148,7 @@ export default function DriverWorkScreen({ kind, initialTab }: { kind: WorkKind;
           '& .MuiTab-root.Mui-selected': { color: 'primary.contrastText' },
         }}
       >
-        <Tab value="regiao" label={`Na região (${requests.length})`} />
+        <Tab value="regiao" label={`Pedidos (${requests.length})`} />
         <Tab value="minhas" label={`Minhas (${jobs.length})`} />
       </Tabs>
 
@@ -160,7 +160,11 @@ export default function DriverWorkScreen({ kind, initialTab }: { kind: WorkKind;
 
       {tab === 'regiao' ? (
         requests.length === 0 ? (
-          <StatusScreen icon={Inbox} title={`Nenhuma ${copy.noun} na região agora`} description="Novos pedidos aparecem aqui automaticamente." />
+          <StatusScreen
+            icon={Inbox}
+            title="Nenhum pedido agora"
+            description="Pedidos de vaga e de encomenda nas viagens que você publicou aparecem aqui automaticamente."
+          />
         ) : (
           <Stack spacing={1.5}>
             {requests.map((request) => (

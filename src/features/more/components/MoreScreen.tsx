@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { CarFront, ChevronRight, FileText, Gift, LogOut, Repeat, Settings, User } from 'lucide-react';
+import { Building2, CarFront, ChevronRight, FileText, Gift, LogOut, Repeat, Settings, User } from 'lucide-react';
 import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
 import ButtonBase from '@mui/material/ButtonBase';
@@ -12,6 +12,7 @@ import OptionList, { type MenuOption } from './OptionList';
 
 const ACCOUNT_OPTIONS: MenuOption[] = [
   { label: 'Perfil', description: 'Nome, foto, telefone e e-mail', href: '/perfil', icon: User },
+  { label: 'Empresa', description: 'CNPJ, gestores e fretes', href: '/empresa', icon: Building2 },
   { label: 'Recompensas', description: 'Seus cupons e missões', href: '/recompensas', icon: Gift, badge: 'Ganhe R$ 15' },
   { label: 'Configurações', description: 'Tema e notificações', href: '/configuracoes', icon: Settings },
 ];

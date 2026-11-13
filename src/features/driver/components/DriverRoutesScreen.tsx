@@ -23,6 +23,7 @@ import { formatDate, formatTime } from '@/utils/formatDate';
 const loadOnce = () => false;
 const STATUS = {
   published: { label: 'Publicada', color: 'primary' },
+  in_progress: { label: 'Em andamento', color: 'secondary' },
   completed: { label: 'Concluída', color: 'success' },
   canceled: { label: 'Cancelada', color: 'default' },
 } as const;
@@ -73,7 +74,7 @@ export default function DriverRoutesScreen() {
             Minhas rotas
           </Typography>
           <Typography variant="body2" color="text.secondary">
-            Passageiros veem suas rotas na busca entre cidades.
+            Quem busca um caminho que passa pela sua rota encontra você — inclusive no meio do caminho.
           </Typography>
         </Box>
       </Stack>
@@ -116,13 +117,37 @@ export default function DriverRoutesScreen() {
                   </Typography>
                 </Stack>
                 <Stack direction="row" sx={{ flexWrap: 'wrap', gap: 1, mt: 1.5, alignItems: 'center' }}>
-                  <Typography sx={{ fontWeight: 700, mr: 0.5 }}>{formatCurrency(route.pricePerSeatCents)}/lugar</Typography>
-                  <Chip size="small" variant="outlined" icon={<Armchair size={14} />} label={`${free} de ${route.seats} livre${free === 1 ? '' : 's'}`} />
-                  {route.acceptsPackages && <Chip size="small" variant="outlined" icon={<Package size={14} />} label="Encomendas" />}
+                  {route.seats > 0 && (
+                    <>
+                      <Typography sx={{ fontWeight: 700, mr: 0.5 }}>{formatCurrency(route.pricePerSeatCents)}/lugar</Typography>
+                      <Chip size="small" variant="outlined" icon={<Armchair size={14} />} label={`${free} de ${route.seats} livre${free === 1 ? '' : 's'}`} />
+                    </>
+                  )}
+                  {route.acceptsPackages && (
+                    <Chip
+                      size="small"
+                      variant="outlined"
+                      icon={<Package size={14} />}
+                      label={route.pricePerPackageCents ? `Encomendas · ${formatCurrency(route.pricePerPackageCents)}` : 'Encomendas'}
+                    />
+                  )}
+                  {route.private && <Chip size="small" color="secondary" label="Frete exclusivo" />}
+                  {route.bookingsClosed && route.status === 'published' && <Chip size="small" label="Reservas encerradas" />}
                 </Stack>
                 <Typography variant="caption" color="text.secondary" sx={{ display: 'block', mt: 1 }}>
                   {vehicleLabel(route.vehicleId)}
                 </Typography>
+                {(route.status === 'published' || route.status === 'in_progress') && (
+                  <Button
+                    size="small"
+                    variant="contained"
+                    component={Link}
+                    href={`/motorista/rotas/gerenciar?id=${encodeURIComponent(route.id)}`}
+                    sx={{ mt: 1, mr: 1, borderRadius: 999, textTransform: 'none', fontWeight: 600 }}
+                  >
+                    Gerenciar viagem
+                  </Button>
+                )}
                 {route.status === 'published' && (
                   <Button
                     size="small"

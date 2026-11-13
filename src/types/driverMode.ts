@@ -47,9 +47,17 @@ export interface DriverAccount {
   status: DriverAccountStatus;
   cnh?: Cnh;
   vehicles: Vehicle[];
+  /** Última verificação da CNH (recusada = o motivo, para reenviar) */
+  review?: { status: 'PROCESSING' | 'APPROVED' | 'REJECTED' | 'ERROR'; reason: string | null };
 }
 
-export type DriverRouteStatus = 'published' | 'completed' | 'canceled';
+/** Envio para a verificação automática: foto da CNH + código de segurança (verso / CNH digital) */
+export interface CnhSubmission {
+  image: File;
+  securityCode: string;
+}
+
+export type DriverRouteStatus = 'published' | 'in_progress' | 'completed' | 'canceled';
 
 /** Rota que o motorista vai fazer e oferece lugares/espaço para encomendas */
 export interface DriverRoute {
@@ -64,14 +72,28 @@ export interface DriverRoute {
   pricePerSeatCents: number;
   acceptsPackages: boolean;
   status: DriverRouteStatus;
+  /** Preço por encomenda (centavos) */
+  pricePerPackageCents?: number;
+  /** Peso máximo de encomendas/bagagem (kg) */
+  maxCargoKg?: number | null;
+  bookingsClosed?: boolean;
+  /** O motorista recebe por vaga (preço menos a comissão da plataforma) */
+  driverReceivesPerSeatCents?: number;
+  /** Viagem exclusiva de frete (não aparece na busca) */
+  private?: boolean;
 }
 
-export type NewDriverRoute = Omit<DriverRoute, 'id' | 'seatsTaken' | 'status'>;
+export type NewDriverRoute = Omit<DriverRoute, 'id' | 'seatsTaken' | 'status' | 'departurePoint' | 'originCity' | 'destinationCity'> & {
+  origin: import('./place').Place;
+  destination: import('./place').Place;
+  departurePoint: string;
+};
 
 export type RegionRequestStatus = 'open' | 'accepted' | 'rejected';
 
 /** Pedido de alguém da região (corrida ou encomenda) esperando um motorista */
 export interface RegionRequest {
+  /** "ride:<carona>:<pedido>" ou "delivery:<carona>:<encomenda>" */
   id: string;
   kind: 'ride' | 'delivery';
   customerId: string;
@@ -90,12 +112,21 @@ export interface RegionRequest {
   packageSize?: PackageSize;
   fragile?: boolean;
   status: RegionRequestStatus;
+  /** Carona a que o pedido se refere */
+  rideId?: string;
+  /** Bagagem declarada (corridas) ou peso (encomendas) */
+  cargoSummary?: string;
+  /** Pedido de trecho (embarca/desce no meio do caminho) */
+  segment?: boolean;
+  /** Alteração de bagagem esperando aprovação (passageiro já aceito) */
+  baggageChange?: boolean;
 }
 
 export type DriverJobStatus = 'accepted' | 'in_progress' | 'completed' | 'canceled';
 
 /** Corrida/encomenda que o motorista aceitou (aparece em "Viagens") */
 export interface DriverJob {
+  /** "ride:<carona>:<pedido>" ou "delivery:<carona>:<encomenda>" */
   id: string;
   kind: 'ride' | 'delivery';
   customerId: string;
@@ -107,4 +138,7 @@ export interface DriverJob {
   status: DriverJobStatus;
   /** Avaliação que o motorista deu ao passageiro/remetente */
   customerRating?: DriverRating;
+  rideId?: string;
+  /** Encomendas: status no backend (para coletar/entregar com código) */
+  deliveryStatus?: 'CONFIRMED' | 'IN_TRANSIT' | 'DELIVERED' | 'CANCELLED' | 'PENDING';
 }

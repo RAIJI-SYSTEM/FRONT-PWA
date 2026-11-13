@@ -1,18 +1,23 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { CalendarCheck, PackageCheck, PackageSearch, SearchX } from 'lucide-react';
+import { CalendarCheck, Hourglass, KeyRound, PackageCheck, PackageSearch, SearchX } from 'lucide-react';
 import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
+import MenuItem from '@mui/material/MenuItem';
+import Paper from '@mui/material/Paper';
+import TextField from '@mui/material/TextField';
+import Typography from '@mui/material/Typography';
 import Stack from '@mui/material/Stack';
 import StatusScreen from '@/components/StatusScreen';
-import { paymentPaths } from '@/features/payment/paths';
 import OfferList from '@/features/ride/components/OfferList';
 import SearchingView from '@/features/ride/components/SearchingView';
-import { cancelDelivery } from '@/services/deliveries';
+import type { CompanyApi } from '@/services/backend/types';
+import { listMyCompanies } from '@/services/companies';
+import { cancelDelivery, requestDeliverySpace } from '@/services/deliveries';
 import type { RideOffer } from '@/types/ride';
 import { formatDate, formatTime } from '@/utils/formatDate';
 import { useDelivery } from '../hooks/useDelivery';
@@ -29,6 +34,15 @@ export default function DeliveryScreen({ deliveryId }: { deliveryId: string }) {
   const router = useRouter();
   const { delivery, error, setDelivery } = useDelivery(deliveryId);
   const [canceling, setCanceling] = useState(false);
+  const [requesting, setRequesting] = useState(false);
+  const [requestError, setRequestError] = useState<string | null>(null);
+  const [companies, setCompanies] = useState<CompanyApi[]>([]);
+  const [senderCompany, setSenderCompany] = useState('');
+
+  // Quem participa de empresas pode enviar em nome dela (os gestores acompanham juntos)
+  useEffect(() => {
+    listMyCompanies().then(setCompanies).catch(() => setCompanies([]));
+  }, []);
 
   const handleCancel = async () => {
     setCanceling(true);
@@ -40,7 +54,17 @@ export default function DeliveryScreen({ deliveryId }: { deliveryId: string }) {
     }
   };
 
-  const handleContinue = (offer: RideOffer) => router.push(paymentPaths.delivery.checkout(deliveryId, offer.id));
+  const handleContinue = async (offer: RideOffer) => {
+    setRequestError(null);
+    setRequesting(true);
+    try {
+      setDelivery(await requestDeliverySpace(deliveryId, offer.id, senderCompany || null));
+    } catch (err) {
+      setRequestError(err instanceof Error ? err.message : 'Não foi possível pedir o espaço.');
+    } finally {
+      setRequesting(false);
+    }
+  };
 
   if (!delivery) {
     return error ? (
@@ -83,7 +107,58 @@ export default function DeliveryScreen({ deliveryId }: { deliveryId: string }) {
       );
 
     case 'results':
-      return <OfferList offers={delivery.offers} onContinue={handleContinue} noun={['opção de entrega', 'opções de entrega']} />;
+      return (
+        <Stack spacing={2}>
+          {companies.length > 0 && (
+            <TextField select label="Enviar como" value={senderCompany} onChange={(e) => setSenderCompany(e.target.value)}>
+              <MenuItem value="">Eu (pessoa física)</MenuItem>
+              {companies.map((c) => (
+                <MenuItem key={c.id} value={c.id}>
+                  {c.displayName} · {c.cnpjFormatted}
+                </MenuItem>
+              ))}
+            </TextField>
+          )}
+          {requestError && <Alert severity="error">{requestError}</Alert>}
+          {requesting && <CircularProgress size={24} sx={{ alignSelf: 'center' }} />}
+          <OfferList
+            offers={delivery.offers}
+            onContinue={requesting ? () => undefined : handleContinue}
+            noun={['carona que leva encomendas', 'caronas que levam encomendas']}
+            actionLabel="Pedir espaço nesta carona"
+          />
+        </Stack>
+      );
+
+    case 'requested':
+      return (
+        <StatusScreen
+          icon={Hourglass}
+          title="Pedido enviado ao motorista"
+          description="O motorista confere o tamanho e o peso e aceita ou recusa. Avisaremos você. Guarde os códigos abaixo."
+          actions={
+            <>
+              <Button component={Link} href="/encomendas" variant="contained" sx={pillButton}>
+                Ver minhas encomendas
+              </Button>
+              <Button onClick={handleCancel} disabled={canceling} color="inherit" sx={pillButton}>
+                Cancelar pedido
+              </Button>
+            </>
+          }
+        >
+          {delivery.pickupCode && (
+            <Paper variant="outlined" sx={{ width: '100%', maxWidth: 420, p: 2.5, borderRadius: 3, textAlign: 'center' }}>
+              <Stack direction="row" spacing={1} sx={{ justifyContent: 'center', alignItems: 'center', color: 'text.secondary' }}>
+                <KeyRound size={16} />
+                <Typography variant="body2">Código de coleta (mostre ao motorista)</Typography>
+              </Stack>
+              <Typography sx={{ fontWeight: 800, fontSize: '2rem', letterSpacing: 6 }}>{delivery.pickupCode}</Typography>
+            </Paper>
+          )}
+          {delivery.keyword && <DeliveryKeyword keyword={delivery.keyword} recipientName={delivery.details?.recipientName} />}
+        </StatusScreen>
+      );
 
     case 'published': {
       const at = delivery.departure?.type === 'scheduled' ? delivery.departure.at : delivery.createdAt;
@@ -131,11 +206,11 @@ export default function DeliveryScreen({ deliveryId }: { deliveryId: string }) {
         <StatusScreen
           icon={SearchX}
           tone="error"
-          title={delivery.status === 'canceled' ? 'Entrega cancelada' : 'Nenhum motorista disponível'}
+          title={delivery.status === 'canceled' ? 'Entrega cancelada' : 'Nenhuma carona leva encomendas nesse caminho'}
           description={
             delivery.status === 'canceled'
               ? 'Você cancelou esta entrega.'
-              : 'Não encontramos motoristas para essa rota agora. Tente de novo em alguns minutos ou agende a coleta.'
+              : 'Nenhum motorista publicou carona aceitando encomendas por esse caminho nesse horário. Tente outro horário.'
           }
           actions={
             <Button component={Link} href="/encomenda/nova" variant="contained" sx={pillButton}>

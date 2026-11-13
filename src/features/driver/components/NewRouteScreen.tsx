@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { CircleDot, MapPin, Minus, Package, Plus, Send } from 'lucide-react';
 import Alert from '@mui/material/Alert';
@@ -20,9 +20,11 @@ import PlaceAutocomplete from '@/features/ride/components/PlaceAutocomplete';
 import { usePolling } from '@/hooks/usePolling';
 import { ApiError } from '@/services/api';
 import { getDriverAccount, publishRoute } from '@/services/driverMode';
-import { searchCities } from '@/services/mapbox';
+import { previewPrice } from '@/services/rides';
+import type { PriceBreakdownApi } from '@/services/backend/types';
 import type { Place } from '@/types/place';
 import { formatPlate } from '@/utils/driverValidation';
+import { formatCurrency } from '@/utils/formatCurrency';
 import { parseMoney, sanitizeMoneyInput } from '@/utils/money';
 
 const loadOnce = () => false;
@@ -40,9 +42,26 @@ export default function NewRouteScreen() {
   const [seats, setSeats] = useState<number | null>(null);
   const [price, setPrice] = useState('');
   const [acceptsPackages, setAcceptsPackages] = useState(true);
+  const [packagePrice, setPackagePrice] = useState('');
+  const [maxCargoKg, setMaxCargoKg] = useState('30');
+  const [preview, setPreview] = useState<{ price: string; breakdown: PriceBreakdownApi } | null>(null);
   const [errors, setErrors] = useState<Record<string, string>>({});
   const [apiError, setApiError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+
+  // Prévia: quanto fica com a plataforma (comissão) e quanto o motorista recebe por lugar
+  useEffect(() => {
+    const cents = parseMoney(price);
+    if (!cents || Number.isNaN(cents)) return;
+    const timer = setTimeout(() => {
+      previewPrice(cents / 100)
+        .then((breakdown) => setPreview({ price, breakdown }))
+        .catch(() => undefined);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [price]);
+  // Só vale a prévia do preço que está no campo agora
+  const breakdown = preview && preview.price === price ? preview.breakdown : null;
 
   if (loadError) return <Alert severity="error">{loadError}</Alert>;
   if (!account) {
@@ -61,26 +80,31 @@ export default function NewRouteScreen() {
   const submit = async () => {
     setApiError(null);
     const priceCents = parseMoney(price);
+    const packageCents = parseMoney(packagePrice);
     const found: Record<string, string> = {};
-    if (!origin) found.originCity = 'Escolha a cidade de saída.';
-    if (!destination) found.destinationCity = 'Escolha a cidade de destino.';
-    if (!departurePoint.trim()) found.departurePoint = 'Informe o ponto de encontro.';
+    if (!origin) found.originCity = 'Escolha de onde sai.';
+    if (!destination) found.destinationCity = 'Escolha para onde vai.';
     if (!departureAt) found.departureAt = 'Informe a data e o horário.';
-    if (!priceCents || Number.isNaN(priceCents)) found.pricePerSeatCents = 'Informe o preço por lugar.';
+    if (seatCount > 0 && (!priceCents || Number.isNaN(priceCents))) found.pricePerSeatCents = 'Informe o preço por lugar.';
+    if (seatCount === 0 && !acceptsPackages) found.seats = 'Ofereça pelo menos 1 lugar ou aceite encomendas.';
+    if (acceptsPackages && Number.isNaN(packageCents)) found.pricePerPackageCents = 'Preço inválido.';
+    if (acceptsPackages && !(Number(maxCargoKg) > 0)) found.maxCargoKg = 'Informe o peso máximo.';
     setErrors(found);
     if (Object.keys(found).length > 0) return;
 
     setSaving(true);
     try {
       await publishRoute({
-        originCity: origin!.name,
-        destinationCity: destination!.name,
-        departurePoint,
+        origin: origin!,
+        destination: destination!,
+        departurePoint: departurePoint.trim(),
         departureAt: new Date(departureAt).toISOString(),
         vehicleId: vehicle!.id,
         seats: seatCount,
-        pricePerSeatCents: priceCents,
+        pricePerSeatCents: seatCount > 0 ? priceCents : 0,
         acceptsPackages,
+        pricePerPackageCents: acceptsPackages ? packageCents || 0 : 0,
+        maxCargoKg: acceptsPackages ? Number(maxCargoKg) : null,
       });
       router.push('/motorista/rotas');
     } catch (err) {
@@ -94,17 +118,16 @@ export default function NewRouteScreen() {
   return (
     <Stack spacing={2.5}>
       <PlaceAutocomplete
-        label="Saindo de (cidade)"
+        label="Saindo de"
         value={origin}
         onChange={setOrigin}
         icon={<CircleDot size={18} />}
-        search={searchCities}
-        noOptionsText="Digite pelo menos 3 letras da cidade"
+        noOptionsText="Digite o endereço, bairro ou cidade"
         size="medium"
         error={errors.originCity}
       />
       <TextField
-        label="Ponto de encontro"
+        label="Ponto de encontro (opcional)"
         placeholder="Ex.: Metrô Barra Funda, saída 2"
         value={departurePoint}
         onChange={(e) => setDeparturePoint(e.target.value)}
@@ -112,12 +135,11 @@ export default function NewRouteScreen() {
         helperText={errors.departurePoint}
       />
       <PlaceAutocomplete
-        label="Indo para (cidade)"
+        label="Indo para"
         value={destination}
         onChange={setDestination}
         icon={<MapPin size={18} />}
-        search={searchCities}
-        noOptionsText="Digite pelo menos 3 letras da cidade"
+        noOptionsText="Digite o endereço, bairro ou cidade"
         size="medium"
         error={errors.destinationCity}
       />
@@ -187,7 +209,13 @@ export default function NewRouteScreen() {
         value={price}
         onChange={(e) => setPrice(sanitizeMoneyInput(e.target.value))}
         error={Boolean(errors.pricePerSeatCents)}
-        helperText={errors.pricePerSeatCents ?? 'Quanto cada passageiro paga.'}
+        disabled={seatCount === 0}
+        helperText={
+          errors.pricePerSeatCents ??
+          (breakdown && breakdown.driverReceives !== null
+            ? `Você recebe ${formatCurrency(Math.round(breakdown.driverReceives * 100))} por lugar (comissão da plataforma: ${String(breakdown.platformFeePercent).replace('.', ',')}%). Quem embarca no meio do caminho paga o proporcional.`
+            : 'Quanto cada passageiro paga pela viagem inteira.')
+        }
         slotProps={{
           htmlInput: { inputMode: 'decimal' },
           input: { startAdornment: <InputAdornment position="start">R$</InputAdornment> },
@@ -204,6 +232,32 @@ export default function NewRouteScreen() {
         </Box>
         <Switch checked={acceptsPackages} onChange={(e) => setAcceptsPackages(e.target.checked)} slotProps={{ input: { 'aria-label': 'Aceito levar encomendas' } }} />
       </Stack>
+
+      {acceptsPackages && (
+        <Stack direction="row" spacing={1.5}>
+          <TextField
+            fullWidth
+            label="Preço por encomenda"
+            value={packagePrice}
+            onChange={(e) => setPackagePrice(sanitizeMoneyInput(e.target.value))}
+            error={Boolean(errors.pricePerPackageCents)}
+            helperText={errors.pricePerPackageCents ?? 'Vazio = grátis'}
+            slotProps={{
+              htmlInput: { inputMode: 'decimal' },
+              input: { startAdornment: <InputAdornment position="start">R$</InputAdornment> },
+            }}
+          />
+          <TextField
+            fullWidth
+            label="Peso máximo"
+            value={maxCargoKg}
+            onChange={(e) => setMaxCargoKg(e.target.value.replace(/[^\d]/g, ''))}
+            error={Boolean(errors.maxCargoKg)}
+            helperText={errors.maxCargoKg ?? 'Encomendas + bagagens'}
+            slotProps={{ htmlInput: { inputMode: 'numeric' }, input: { endAdornment: <InputAdornment position="end">kg</InputAdornment> } }}
+          />
+        </Stack>
+      )}
 
       {apiError && <Alert severity="error">{apiError}</Alert>}
 

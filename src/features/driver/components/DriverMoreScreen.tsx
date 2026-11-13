@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { IdCard, Repeat, Route, Settings } from 'lucide-react';
+import { Building2, IdCard, Repeat, Route, Settings } from 'lucide-react';
 import Button from '@mui/material/Button';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
@@ -9,7 +9,8 @@ import OptionList, { type MenuOption } from '@/features/more/components/OptionLi
 
 const DRIVER_OPTIONS: MenuOption[] = [
   { label: 'Perfil de motorista', description: 'CNH e veículos', href: '/motorista/perfil', icon: IdCard },
-  { label: 'Minhas rotas', description: 'Publicar, ver e cancelar rotas', href: '/motorista/rotas', icon: Route },
+  { label: 'Minhas rotas', description: 'Publicar, gerenciar e cancelar viagens', href: '/motorista/rotas', icon: Route },
+  { label: 'Fretes de empresas', description: 'Propostas e pedidos de frete perto de você', href: '/motorista/fretes', icon: Building2 },
 ];
 
 const APP_OPTIONS: MenuOption[] = [

@@ -11,6 +11,8 @@ export interface PackageDetails {
   fragile: boolean;
   /** Valor declarado em centavos (opcional, para seguro/ressarcimento) */
   declaredValueCents?: number;
+  /** Peso aproximado em kg (o motorista confere com o espaço da carona) */
+  weightKg: number;
   recipientName: string;
   recipientPhone: string;
   notes?: string;
@@ -25,7 +27,10 @@ export interface PackageDetails {
  * - paid: pagamento concluído; palavra-chave gerada
  * - canceled: o remetente desistiu
  */
-export type DeliveryStatus = 'awaiting_details' | 'searching' | 'published' | 'results' | 'no_results' | 'paid' | 'canceled';
+/**
+ * - requested: espaço pedido numa carona; esperando o motorista aceitar (já com os códigos)
+ */
+export type DeliveryStatus = 'awaiting_details' | 'searching' | 'published' | 'results' | 'no_results' | 'requested' | 'paid' | 'canceled';
 
 export interface Delivery {
   id: string;
@@ -38,6 +43,14 @@ export interface Delivery {
   offers: RideOffer[];
   /** Palavra-chave que o destinatário informa ao motorista para receber a entrega */
   keyword?: string;
+  /** Código de 4 dígitos que o remetente mostra ao motorista na coleta */
+  pickupCode?: string;
+  /** Encomenda no backend (depois de pedir espaço numa carona) */
+  backendId?: string;
+  /** Carona escolhida */
+  rideId?: string;
+  /** Enviada em nome de uma empresa */
+  companyId?: string | null;
   createdAt: string;
 }
 

@@ -29,6 +29,17 @@ export default function PackageStep({ form, errors, update }: StepProps) {
         slotProps={{ htmlInput: { maxLength: 120 } }}
       />
       <TextField
+        label="Peso aproximado"
+        value={form.weight}
+        onChange={(e) => update({ weight: e.target.value.replace(/[^\d.,]/g, '') })}
+        error={Boolean(errors.weight)}
+        helperText={errors.weight ?? 'O motorista confere com o espaço da carona.'}
+        slotProps={{
+          htmlInput: { inputMode: 'decimal' },
+          input: { endAdornment: <InputAdornment position="end">kg</InputAdornment> },
+        }}
+      />
+      <TextField
         label="Valor declarado (opcional)"
         value={form.declaredValue}
         onChange={(e) => update({ declaredValue: e.target.value.replace(/[^\d.,]/g, '') })}
