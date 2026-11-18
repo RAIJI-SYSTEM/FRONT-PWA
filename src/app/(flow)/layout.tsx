@@ -1,5 +1,6 @@
 import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
+import AuthGate from '@/components/AuthGate';
 
 /** Telas de fluxo (nova viagem, busca, pagamento): sem o menu inferior, para o passageiro focar no passo atual */
 export default function FlowLayout({ children }: { children: React.ReactNode }) {
@@ -14,7 +15,7 @@ export default function FlowLayout({ children }: { children: React.ReactNode }) 
     >
       {/* Coluna com a altura da tela: permite que barras de ação fiquem no fim mesmo com pouco conteúdo */}
       <Container maxWidth="sm" sx={{ px: { xs: 2, sm: 3 }, pb: 4, minHeight: '100dvh', display: 'flex', flexDirection: 'column' }}>
-        {children}
+        <AuthGate>{children}</AuthGate>
       </Container>
     </Box>
   );

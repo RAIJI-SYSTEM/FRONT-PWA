@@ -2,6 +2,7 @@ import Box from '@mui/material/Box';
 import Container from '@mui/material/Container';
 import Footer from '@/components/Footer';
 import Header from '@/components/Header';
+import AuthGate from '@/components/AuthGate';
 import DriverGate from '@/features/driver/components/DriverGate';
 
 /**
@@ -19,9 +20,11 @@ export default function DriverLayout({ children }: { children: React.ReactNode }
           'linear-gradient(180deg, rgba(var(--mui-palette-primary-mainChannel) / 0.28) 0%, transparent 320px)',
       }}
     >
-      <Header userName="Pablo" location="São Paulo, SP" modeLabel="Motorista" mode="driver" />
+      <Header modeLabel="Motorista" mode="driver" />
       <Container maxWidth="md" component="main" sx={{ px: { xs: 2, sm: 3 }, pt: 1, pb: { xs: 12, sm: 15 } }}>
-        <DriverGate>{children}</DriverGate>
+        <AuthGate>
+          <DriverGate>{children}</DriverGate>
+        </AuthGate>
       </Container>
       <Footer mode="driver" />
     </Box>

@@ -38,10 +38,17 @@ export default function LoginForm() {
     });
   }, []);
 
-  // Já logado (ou o login acabou de concluir no app): segue para o início
+  // Para onde voltar depois do login (?voltar=/viagem/nova); só caminhos do próprio app
+  const [returnTo] = useState(() => {
+    if (typeof window === 'undefined') return '/homepage';
+    const target = new URLSearchParams(window.location.search).get('voltar');
+    return target && target.startsWith('/') && !target.startsWith('//') && !target.startsWith('/login') ? target : '/homepage';
+  });
+
+  // Já logado (ou o login acabou de concluir no app): segue em frente
   useEffect(() => {
-    if (session) router.replace('/homepage');
-  }, [session, router]);
+    if (session) router.replace(returnTo);
+  }, [session, router, returnTo]);
 
   const start = async (action: Action, options: SignInOptions) => {
     setError(null);
@@ -64,7 +71,7 @@ export default function LoginForm() {
 
         <Button
           variant="contained"
-          onClick={() => start('email', {})}
+          onClick={() => start('email', { returnTo })}
           disabled={loading !== null}
           startIcon={loading === 'email' ? <CircularProgress size={20} color="inherit" /> : <LogIn size={20} />}
           sx={{ ...pillSx, boxShadow: 3 }}
@@ -77,7 +84,7 @@ export default function LoginForm() {
         <Button
           variant="outlined"
           color="inherit"
-          onClick={() => start('google', { provider: 'google' })}
+          onClick={() => start('google', { provider: 'google', returnTo })}
           disabled={loading !== null}
           startIcon={loading === 'google' ? <CircularProgress size={20} /> : <GoogleIcon />}
           sx={{ ...pillSx, bgcolor: 'background.paper', borderColor: 'divider' }}
@@ -91,7 +98,7 @@ export default function LoginForm() {
             component="button"
             type="button"
             underline="hover"
-            onClick={() => start('register', { mode: 'register' })}
+            onClick={() => start('register', { mode: 'register', returnTo })}
             disabled={loading !== null}
             sx={{ fontWeight: 600, verticalAlign: 'baseline', display: 'inline-flex', alignItems: 'center', gap: 0.5 }}
           >

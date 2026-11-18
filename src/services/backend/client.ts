@@ -1,16 +1,17 @@
-import { ApiError } from '@/services/api';
+import { ApiError, apiUrl } from '@/services/api';
 import { getAccessToken } from '@/services/auth';
 
 /**
- * Cliente do backend Raiji (monolito Java), sempre pelo Kong — a mesma porta do login.
- * NEXT_PUBLIC_RAIJI_API_URL (padrão http://localhost:8000). No app Android, use o IP do PC.
+ * Cliente do backend Raiji (monolito Java) pelo BFF: o app chama /api/raiji/... no próprio
+ * servidor Next (mesma origem na web; NEXT_PUBLIC_API_URL no Android), que repassa ao Kong.
  */
-export const RAIJI_API_URL = (process.env.NEXT_PUBLIC_RAIJI_API_URL ?? process.env.NEXT_PUBLIC_KEYCLOAK_URL ?? 'http://localhost:8000').replace(/\/$/, '');
 
 type Query = Record<string, string | number | boolean | undefined | null | (string | number)[]>;
 
 function buildUrl(path: string, query?: Query) {
-  const url = new URL(`${RAIJI_API_URL}${path}`);
+  // "/api/rides/..." do backend -> "/api/raiji/rides/..." do BFF
+  const target = apiUrl(`/api/raiji${path.replace(/^\/api/, '')}`);
+  const url = new URL(target, typeof window === 'undefined' ? 'http://localhost' : window.location.origin);
   for (const [key, value] of Object.entries(query ?? {})) {
     if (value === undefined || value === null) continue;
     if (Array.isArray(value)) value.forEach((v) => url.searchParams.append(key, String(v)));

@@ -14,6 +14,7 @@ import { App } from '@capacitor/app';
 import { Browser } from '@capacitor/browser';
 import { Capacitor } from '@capacitor/core';
 import { OidcClient, WebStorageStateStore } from 'oidc-client-ts';
+import { apiUrl } from './api';
 
 /** Endereço público do Keycloak (o Kong). No celular, use o IP do PC: http://192.168.0.10:8000 */
 const KEYCLOAK_URL = (process.env.NEXT_PUBLIC_KEYCLOAK_URL ?? 'http://localhost:8000').replace(/\/$/, '');
@@ -22,6 +23,12 @@ const CLIENT_ID = process.env.NEXT_PUBLIC_KEYCLOAK_CLIENT_ID ?? 'raiji-api';
 
 const ISSUER = `${KEYCLOAK_URL}/realms/${REALM}`;
 const OIDC = `${ISSUER}/protocol/openid-connect`;
+/**
+ * Token e logout passam pelo BFF (rotas /api do Next): o app só fala com a própria origem.
+ * Só as PÁGINAS de login/cadastro/Google abrem no endereço público do Keycloak.
+ */
+const TOKEN_ENDPOINT = () => apiUrl('/api/auth/token');
+const LOGOUT_ENDPOINT = () => apiUrl('/api/auth/logout');
 const NATIVE_REDIRECT_URI = 'com.raiji.app://auth/callback';
 const STORAGE_KEY = 'raiji.auth.session';
 /** Renova o token um pouco antes de vencer */
@@ -165,7 +172,7 @@ function oidc() {
     metadata: {
       issuer: ISSUER,
       authorization_endpoint: `${OIDC}/auth`,
-      token_endpoint: `${OIDC}/token`,
+      token_endpoint: TOKEN_ENDPOINT(),
       end_session_endpoint: `${OIDC}/logout`,
       userinfo_endpoint: `${OIDC}/userinfo`,
       jwks_uri: `${OIDC}/certs`,
@@ -213,7 +220,7 @@ let refreshing: Promise<Session> | null = null;
 
 async function refreshSession(session: Session): Promise<Session> {
   if (!session.refreshToken) throw new SessionExpiredError();
-  const response = await fetch(`${OIDC}/token`, {
+  const response = await fetch(TOKEN_ENDPOINT(), {
     method: 'POST',
     body: new URLSearchParams({ grant_type: 'refresh_token', client_id: CLIENT_ID, refresh_token: session.refreshToken }),
   });
@@ -258,7 +265,7 @@ export async function signOut() {
   const session = getSession();
   setSession(null);
   if (session?.refreshToken) {
-    await fetch(`${OIDC}/logout`, {
+    await fetch(LOGOUT_ENDPOINT(), {
       method: 'POST',
       body: new URLSearchParams({ client_id: CLIENT_ID, refresh_token: session.refreshToken }),
     }).catch(() => {});

@@ -1,5 +1,6 @@
 'use client';
 
+import { useSession } from '@/hooks/useSession';
 import AppBar from '@mui/material/AppBar';
 import Avatar from '@mui/material/Avatar';
 import Badge from '@mui/material/Badge';
@@ -71,7 +72,7 @@ function HeaderIconButton({ label, count, icon, onClick, href }: HeaderIconButto
 }
 
 export default function Header({
-  userName = 'Usuário',
+  userName,
   avatarSrc,
   location,
   notificationsCount,
@@ -79,6 +80,10 @@ export default function Header({
   modeLabel,
   mode = 'passenger',
 }: HeaderProps) {
+  const session = useSession();
+  // Primeiro nome de quem entrou (o Keycloak manda o nome completo)
+  const displayName = userName ?? session?.user.name?.split(' ')[0] ?? 'Usuário';
+
   const unreadMessages = useUnreadMessages(mode);
   const unreadNotifications = useUnreadNotifications(mode);
   const headerRef = useRef<HTMLElement>(null);
@@ -122,7 +127,7 @@ export default function Header({
           <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center', minWidth: 0 }}>
             <Avatar
               src={avatarSrc}
-              alt={userName}
+              alt={displayName}
               sx={{
                 width: { xs: 48, sm: 56 },
                 height: { xs: 48, sm: 56 },
@@ -132,7 +137,7 @@ export default function Header({
                 borderColor: 'background.paper',
               }}
             >
-              {userName.charAt(0).toUpperCase()}
+              {displayName.charAt(0).toUpperCase()}
             </Avatar>
 
             <Box sx={{ minWidth: 0 }}>
@@ -141,7 +146,7 @@ export default function Header({
                 noWrap
                 sx={{ fontWeight: 600, fontSize: { xs: '1.0625rem', sm: '1.25rem' }, lineHeight: 1.3 }}
               >
-                Olá, {userName}
+                Olá, {displayName}
               </Typography>
               {modeLabel && (
                 <Chip label={modeLabel} size="small" color="primary" sx={{ height: 20, fontWeight: 700, fontSize: '0.7rem', mb: 0.25 }} />
