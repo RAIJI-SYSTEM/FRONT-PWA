@@ -34,11 +34,19 @@ const RatingDialog = dynamic(() => import('@/components/RatingDialog'));
 
 export type WorkKind = RegionRequest['kind'];
 export type WorkTab = 'regiao' | 'minhas';
+/** Filtro por tipo: tudo, só caronas ou só encomendas (na URL: ?tipo=caronas|encomendas) */
+export type WorkFilter = WorkKind | 'all';
 
-const COPY: Record<WorkKind, { title: string; noun: string; plural: string; path: string; customer: string; icon: typeof Car }> = {
-  ride: { title: 'Viagens', noun: 'carona', plural: 'caronas', path: '/motorista/viagens', customer: 'Passageiro', icon: Car },
-  delivery: { title: 'Encomendas', noun: 'encomenda', plural: 'encomendas', path: '/motorista/encomendas', customer: 'Remetente', icon: Package },
+const COPY: Record<WorkKind, { noun: string; plural: string; param: string; customer: string; icon: typeof Car }> = {
+  ride: { noun: 'carona', plural: 'caronas', param: 'caronas', customer: 'Passageiro', icon: Car },
+  delivery: { noun: 'encomenda', plural: 'encomendas', param: 'encomendas', customer: 'Remetente', icon: Package },
 };
+
+const PATH = '/motorista/pedidos';
+
+/** ?tipo= da URL → filtro */
+export const workFilterFromParam = (value: string | null): WorkFilter =>
+  value === COPY.ride.param ? 'ride' : value === COPY.delivery.param ? 'delivery' : 'all';
 
 const STATUS: Record<DriverJobStatus, { label: string; color: 'default' | 'primary' | 'secondary' | 'success' }> = {
   accepted: { label: 'Aceita', color: 'primary' },
@@ -54,13 +62,13 @@ const loadOnce = () => false;
 const isActive = (j: DriverJob) => j.status === 'accepted' || j.status === 'in_progress';
 
 /**
- * Viagens (caronas) ou Encomendas do motorista, em duas abas:
- * "Na região" (pedidos para aceitar/recusar) e "Minhas" (aceitas e concluídas, com avaliação).
+ * Pedidos do motorista (caronas e encomendas nas viagens que ele publicou), em duas abas:
+ * "Pedidos" (para aceitar/recusar) e "Minhas" (aceitas e concluídas, com avaliação).
  */
-export default function DriverWorkScreen({ kind, initialTab }: { kind: WorkKind; initialTab: WorkTab }) {
+export default function DriverWorkScreen({ initialKind, initialTab }: { initialKind: WorkFilter; initialTab: WorkTab }) {
   const router = useRouter();
-  const copy = COPY[kind];
   const [tab, setTab] = useState<WorkTab>(initialTab);
+  const [kind, setKind] = useState<WorkFilter>(initialKind);
   const requestsQuery = usePolling('driver-requests', listRegionRequests, keepPolling, POLL_MS);
   const jobsQuery = usePolling('driver-jobs', listDriverJobs, loadOnce);
   const setRequests = requestsQuery.setData;
@@ -72,9 +80,17 @@ export default function DriverWorkScreen({ kind, initialTab }: { kind: WorkKind;
   const [jobFilter, setJobFilter] = useState<'all' | 'active' | 'completed'>('all');
   const [rating, setRating] = useState<DriverJob | null>(null);
 
+  const syncUrl = (nextTab: WorkTab, nextKind: WorkFilter) =>
+    router.replace(`${PATH}?aba=${nextTab}${nextKind === 'all' ? '' : `&tipo=${COPY[nextKind].param}`}`, { scroll: false });
+
   const changeTab = (next: WorkTab) => {
     setTab(next);
-    router.replace(`${copy.path}?aba=${next}`, { scroll: false });
+    syncUrl(next, kind);
+  };
+
+  const changeKind = (next: WorkFilter) => {
+    setKind(next);
+    syncUrl(tab, next);
   };
 
   // Estável (useCallback): os cartões usam memo e não redesenham à toa
@@ -100,8 +116,9 @@ export default function DriverWorkScreen({ kind, initialTab }: { kind: WorkKind;
     [setRequests, setJobs],
   );
 
-  const requests = requestsQuery.data?.filter((r) => r.kind === kind);
-  const jobs = jobsQuery.data?.filter((j) => j.kind === kind);
+  const ofKind = (item: { kind: WorkKind }) => kind === 'all' || item.kind === kind;
+  const requests = requestsQuery.data?.filter(ofKind);
+  const jobs = jobsQuery.data?.filter(ofKind);
 
   if (!requests || !jobs) {
     const error = requestsQuery.error ?? jobsQuery.error;
@@ -117,17 +134,21 @@ export default function DriverWorkScreen({ kind, initialTab }: { kind: WorkKind;
   const visibleJobs = jobs.filter((j) => jobFilter === 'all' || (jobFilter === 'active' ? isActive(j) : j.status === 'completed'));
   const earned = jobs.filter((j) => j.status === 'completed').reduce((t, j) => t + j.earningsCents, 0);
   const potential = requests.reduce((t, r) => t + r.earningsCents, 0);
+  // Contagem por tipo da aba atual, para os filtros
+  const source = tab === 'regiao' ? requestsQuery.data : jobsQuery.data;
+  const countOf = (k: WorkKind) => source?.filter((item) => item.kind === k).length ?? 0;
+  const noun = kind === 'all' ? { one: 'pedido', many: 'viagens e encomendas' } : { one: COPY[kind].noun, many: COPY[kind].plural };
 
   return (
     <Stack spacing={2.5}>
       <Stack spacing={0.25}>
         <Typography component="h1" variant="h5" sx={{ fontWeight: 800 }}>
-          {copy.title}
+          Pedidos
         </Typography>
         <Typography variant="body2" color="text.secondary" aria-live="polite">
           {tab === 'regiao'
             ? `${requests.length} ${requests.length === 1 ? 'pedido' : 'pedidos'} nas suas viagens${potential > 0 ? ` · até ${formatCurrency(potential)}` : ''}`
-            : `${formatCurrency(earned)} em ${copy.plural} concluídas`}
+            : `${formatCurrency(earned)} em ${noun.many} concluídas`}
         </Typography>
       </Stack>
 
@@ -135,7 +156,7 @@ export default function DriverWorkScreen({ kind, initialTab }: { kind: WorkKind;
         value={tab}
         onChange={(_, value: WorkTab) => changeTab(value)}
         variant="fullWidth"
-        aria-label={`${copy.title}: região ou minhas`}
+        aria-label="Pedidos: novos ou já aceitos"
         sx={{
           minHeight: 44,
           p: 0.5,
@@ -151,6 +172,17 @@ export default function DriverWorkScreen({ kind, initialTab }: { kind: WorkKind;
         <Tab value="regiao" label={`Pedidos (${requests.length})`} />
         <Tab value="minhas" label={`Minhas (${jobs.length})`} />
       </Tabs>
+
+      <FilterChips
+        label="Tipo"
+        options={[
+          { value: 'all', label: 'Todos' },
+          { value: 'ride', label: `Caronas · ${countOf('ride')}` },
+          { value: 'delivery', label: `Encomendas · ${countOf('delivery')}` },
+        ]}
+        value={kind}
+        onChange={changeKind}
+      />
 
       {actionError && (
         <Alert severity="warning" onClose={() => setActionError(null)}>
@@ -187,12 +219,12 @@ export default function DriverWorkScreen({ kind, initialTab }: { kind: WorkKind;
           <HistoryList
             key={jobFilter}
             items={visibleJobs}
-            emptyTitle={`Você ainda não aceitou nenhuma ${copy.noun}`}
+            emptyTitle={`Você ainda não aceitou nenhum${kind === 'all' ? ' pedido' : `a ${noun.one}`}`}
             filtered={jobFilter !== 'all'}
             onClear={() => setJobFilter('all')}
             renderItem={(job) => (
               <HistoryCard
-                icon={copy.icon}
+                icon={COPY[job.kind].icon}
                 title={job.customerName}
                 subtitle={`${formatDate(job.date)} · ${formatTime(job.date)}`}
                 status={STATUS[job.status]}
@@ -209,7 +241,7 @@ export default function DriverWorkScreen({ kind, initialTab }: { kind: WorkKind;
                         {job.customerName}
                       </Typography>
                       <Typography variant="caption" color="text.secondary">
-                        {copy.customer}
+                        {COPY[job.kind].customer}
                       </Typography>
                     </Box>
                     {job.customerRating ? (
@@ -254,7 +286,7 @@ export default function DriverWorkScreen({ kind, initialTab }: { kind: WorkKind;
       {rating && (
         <RatingDialog
           person={{ id: rating.customerId, name: rating.customerName }}
-          title={`Como foi ${kind === 'ride' ? 'a carona' : 'a entrega'} com ${rating.customerName.split(' ')[0]}?`}
+          title={`Como foi ${rating.kind === 'ride' ? 'a carona' : 'a entrega'} com ${rating.customerName.split(' ')[0]}?`}
           subtitle="Avaliar clientes ajuda a manter a comunidade segura para os motoristas."
           tagsFor={customerTagsFor}
           onSubmit={async (value) => {

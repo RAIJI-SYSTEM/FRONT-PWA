@@ -94,8 +94,8 @@ export default function DriverHomeScreen() {
           Na sua região agora
         </Typography>
         <Stack direction="row" spacing={1.5}>
-          <RegionShortcut href="/motorista/viagens?aba=regiao" icon={Car} count={requests.filter((r) => r.kind === 'ride').length} label="caronas disponíveis" />
-          <RegionShortcut href="/motorista/encomendas?aba=regiao" icon={Package} count={requests.filter((r) => r.kind === 'delivery').length} label="encomendas disponíveis" />
+          <RegionShortcut href="/motorista/pedidos?tipo=caronas" icon={Car} count={requests.filter((r) => r.kind === 'ride').length} label="caronas disponíveis" />
+          <RegionShortcut href="/motorista/pedidos?tipo=encomendas" icon={Package} count={requests.filter((r) => r.kind === 'delivery').length} label="encomendas disponíveis" />
         </Stack>
       </Box>
 
@@ -151,7 +151,7 @@ export default function DriverHomeScreen() {
               <ButtonBase
                 key={job.id}
                 component={Link}
-                href={`${job.kind === 'ride' ? '/motorista/viagens' : '/motorista/encomendas'}?aba=minhas`}
+                href={`/motorista/pedidos?aba=minhas&tipo=${job.kind === 'ride' ? 'caronas' : 'encomendas'}`}
                 sx={{ display: 'block', textAlign: 'left', p: 2, borderRadius: 3, border: 1, borderColor: 'divider', bgcolor: 'background.paper' }}
               >
                 <Stack direction="row" spacing={1} sx={{ alignItems: 'center', mb: 1 }}>

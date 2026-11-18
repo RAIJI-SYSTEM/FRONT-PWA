@@ -131,7 +131,7 @@ function seed(): Map<string, StoredConversation> {
       title: bia.name,
       subtitle: 'Passageira · nota 4,9',
       participants: [me, bia],
-      context: { kind: 'ride', label: 'Corrida', origin: 'Av. Paulista, 1000', destination: 'Aeroporto de Congonhas', href: '/motorista/viagens' },
+      context: { kind: 'ride', label: 'Corrida', origin: 'Av. Paulista, 1000', destination: 'Aeroporto de Congonhas', href: '/motorista/pedidos?aba=minhas' },
       messages: [
         message(SYSTEM_ID, 'Você aceitou a corrida de Beatriz', minutesAgo(15)),
         message(bia.id, 'Oi! Estou com uma mala grande, tudo bem?', minutesAgo(12)),
@@ -163,7 +163,7 @@ function seed(): Map<string, StoredConversation> {
       title: loja.name,
       subtitle: 'Empresa · envia encomendas',
       participants: [me, loja],
-      context: { kind: 'delivery', label: 'Encomenda grande', origin: 'R. 25 de Março, 800', destination: 'Guarulhos', href: '/motorista/viagens' },
+      context: { kind: 'delivery', label: 'Encomenda grande', origin: 'R. 25 de Março, 800', destination: 'Guarulhos', href: '/motorista/pedidos?aba=minhas' },
       messages: [
         message(loja.id, 'Olá! O pacote é uma estante desmontada, 3 caixas.', minutesAgo(90)),
         message(ME_ID, 'Certo, vou de van. Chego às 14h.', minutesAgo(85)),

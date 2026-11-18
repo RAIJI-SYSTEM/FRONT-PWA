@@ -6,7 +6,7 @@ import { usePathname } from 'next/navigation';
 import BottomNavigation from '@mui/material/BottomNavigation';
 import BottomNavigationAction from '@mui/material/BottomNavigationAction';
 import Paper from '@mui/material/Paper';
-import { Car, Ellipsis, House, Package } from 'lucide-react';
+import { Car, ClipboardList, Ellipsis, House, Package, Route, Truck } from 'lucide-react';
 
 export interface FooterItem {
   label: string;
@@ -23,12 +23,13 @@ const defaultItems: FooterItem[] = [
   { label: 'Mais', href: '/mais', icon: <Ellipsis size={22} /> },
 ];
 
-/** Menu do modo motorista (perfil e rotas ficam dentro do "Mais") */
+/** Menu do modo motorista: o trabalho do motorista fica à mão (o perfil fica dentro do "Mais") */
 const driverItems: FooterItem[] = [
   { label: 'Início', href: '/motorista', icon: <House size={22} /> },
-  { label: 'Viagens', href: '/motorista/viagens', icon: <Car size={22} /> },
-  { label: 'Encomendas', href: '/motorista/encomendas', icon: <Package size={22} /> },
-  { label: 'Mais', href: '/motorista/mais', icon: <Ellipsis size={22} />, also: ['/motorista/perfil', '/motorista/rotas'] },
+  { label: 'Rotas', href: '/motorista/rotas', icon: <Route size={22} /> },
+  { label: 'Pedidos', href: '/motorista/pedidos', icon: <ClipboardList size={22} /> },
+  { label: 'Fretes', href: '/motorista/fretes', icon: <Truck size={22} /> },
+  { label: 'Mais', href: '/motorista/mais', icon: <Ellipsis size={22} />, also: ['/motorista/perfil'] },
 ];
 
 const matches = (pathname: string, path: string) => pathname === path || pathname.startsWith(`${path}/`);
@@ -77,6 +78,9 @@ export default function Footer({ mode = 'passenger', items = mode === 'driver' ?
             icon={item.icon}
             sx={{
               gap: 0.5,
+              // Sem a largura mínima de 80px do MUI: 5 itens cabem em telas de 360px
+              minWidth: 0,
+              px: 0.5,
               color: 'text.secondary',
               '&.Mui-selected': { color: 'primary.main' },
               '& .MuiBottomNavigationAction-label, & .MuiBottomNavigationAction-label.Mui-selected': {

@@ -26,11 +26,11 @@ function seed() {
     n('p8', 'passenger', 'account', 'Novo acesso à sua conta', 'Entramos a partir de um novo aparelho (Android). Se não foi você, troque sua senha.', 60 * 96, true),
 
     // ---------- Motorista ----------
-    n('d1', 'driver', 'trips', 'Nova carona na sua região', 'Beatriz Lima · Av. Paulista → Aeroporto de Congonhas · R$ 28,60.', 3, false, '/motorista/viagens?aba=regiao'),
-    n('d2', 'driver', 'deliveries', 'Encomenda frágil disponível', 'Shopping Ibirapuera → R. Augusta · tamanho médio · R$ 21,50.', 20, false, '/motorista/encomendas?aba=regiao'),
+    n('d1', 'driver', 'trips', 'Nova carona na sua região', 'Beatriz Lima · Av. Paulista → Aeroporto de Congonhas · R$ 28,60.', 3, false, '/motorista/pedidos?tipo=caronas'),
+    n('d2', 'driver', 'deliveries', 'Encomenda frágil disponível', 'Shopping Ibirapuera → R. Augusta · tamanho médio · R$ 21,50.', 20, false, '/motorista/pedidos?tipo=encomendas'),
     n('d3', 'driver', 'messages', 'Nova mensagem de Carla', '"Dá para me deixar perto da Unicamp?"', 40, false, '/mensagens/conversa?id=mot-grupo-campinas'),
     n('d4', 'driver', 'trips', 'Reserva na sua rota', 'Lucas Andrade reservou 1 lugar em São Paulo → Campinas.', 60 * 5, true, '/motorista/rotas'),
-    n('d5', 'driver', 'payments', 'Ganho liberado', 'R$ 31,20 da entrega para Osasco já está disponível.', 60 * 28, true, '/motorista/encomendas?aba=minhas'),
+    n('d5', 'driver', 'payments', 'Ganho liberado', 'R$ 31,20 da entrega para Osasco já está disponível.', 60 * 28, true, '/motorista/pedidos?aba=minhas&tipo=encomendas'),
     n('d6', 'driver', 'account', 'Você recebeu 5 estrelas', 'Júlia Martins avaliou sua viagem: "Pontual".', 60 * 30, true),
     n('d7', 'driver', 'account', 'Mantenha seus documentos em dia', 'Confira a validade da sua CNH no perfil de motorista.', 60 * 100, true, '/motorista/perfil'),
   ];
