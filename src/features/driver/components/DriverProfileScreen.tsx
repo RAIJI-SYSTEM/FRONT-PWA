@@ -281,7 +281,7 @@ function CnhDialog({ onClose, onSaved }: { onClose: () => void; onSaved: (accoun
     setSaving(true);
     setError(null);
     try {
-      onSaved(await saveCnh({ image: cnh.photo!, securityCode: cnh.securityCode }));
+      onSaved(await saveCnh({ image: cnh.photo, securityCode: cnh.securityCode || undefined }));
     } catch (err) {
       if (err instanceof ApiError && err.fields) setErrors(err.fields);
       setError(err instanceof Error ? err.message : 'Não foi possível enviar.');

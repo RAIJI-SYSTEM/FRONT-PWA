@@ -85,7 +85,8 @@ export default function DriverOnboardingScreen() {
   const save = async () => {
     setApiError(null);
     if (current === 'cnh') {
-      const found: Record<string, string | undefined> = validateCnhVerification(cnh);
+      // Modo de testes: a CNH não é conferida, foto e código são opcionais
+      const found: Record<string, string | undefined> = account.testMode ? {} : validateCnhVerification(cnh);
       setErrors(found);
       if (Object.values(found).some(Boolean)) return;
     } else {
@@ -98,7 +99,7 @@ export default function DriverOnboardingScreen() {
     try {
       if (current === 'cnh') {
         // Vai para "verificando" e o app acompanha até aprovar ou recusar
-        await saveCnh({ image: cnh.photo!, securityCode: cnh.securityCode });
+        await saveCnh({ image: cnh.photo, securityCode: cnh.securityCode || undefined });
         setStep(null);
         setRound((r) => r + 1);
       } else {
@@ -158,6 +159,12 @@ export default function DriverOnboardingScreen() {
       {current === 'cnh' && account.review && (account.review.status === 'REJECTED' || account.review.status === 'ERROR') && (
         <Alert severity={account.review.status === 'ERROR' ? 'warning' : 'error'} sx={{ mb: 2 }}>
           {account.review.reason ?? 'Não deu para verificar sua CNH.'} Você pode enviar de novo.
+        </Alert>
+      )}
+
+      {current === 'cnh' && account.testMode && (
+        <Alert severity="warning" sx={{ mb: 2 }}>
+          Modo de testes: a CNH não é conferida e o cadastro é aprovado na hora. Foto e código são opcionais.
         </Alert>
       )}
 

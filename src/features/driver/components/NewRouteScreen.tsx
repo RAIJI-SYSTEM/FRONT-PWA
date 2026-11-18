@@ -135,6 +135,7 @@ export default function NewRouteScreen() {
         helperText={errors.departurePoint}
       />
       <PlaceAutocomplete
+        proximity={origin?.coordinates}
         label="Indo para"
         value={destination}
         onChange={setDestination}

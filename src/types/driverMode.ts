@@ -49,12 +49,14 @@ export interface DriverAccount {
   vehicles: Vehicle[];
   /** Última verificação da CNH (recusada = o motivo, para reenviar) */
   review?: { status: 'PROCESSING' | 'APPROVED' | 'REJECTED' | 'ERROR'; reason: string | null };
+  /** Backend em modo de testes: aprova sem conferir a CNH (foto e código opcionais) */
+  testMode?: boolean;
 }
 
 /** Envio para a verificação automática: foto da CNH + código de segurança (verso / CNH digital) */
 export interface CnhSubmission {
-  image: File;
-  securityCode: string;
+  image?: File;
+  securityCode?: string;
 }
 
 export type DriverRouteStatus = 'published' | 'in_progress' | 'completed' | 'canceled';

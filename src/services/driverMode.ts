@@ -5,6 +5,7 @@ import { describeBaggage } from '@/features/ride/baggage/baggageTypes';
 import { ApiError } from './api';
 import { backend, fromBrazilLocal, toBrazilLocal, toCents, toReais } from './backend/client';
 import type { AcceptAllApi, BookingApi, DeliveryApi, DriverApplicationApi, RideApi, UserMeApi, VehicleApi } from './backend/types';
+import { simplifyRoute } from '@/utils/simplifyRoute';
 import { getDrivingRoute } from './mapbox';
 
 /** Modo motorista sobre o backend Raiji: cadastro (CNH real), veículos, rotas (caronas) e pedidos. */
@@ -40,14 +41,15 @@ export async function getDriverAccount(): Promise<DriverAccount> {
         : undefined,
     vehicles: vehicles.filter((v) => v.active).map(toVehicle),
     review: application && application.status !== 'NONE' ? { status: application.status, reason: application.reason } : undefined,
+    testMode: application?.testMode ?? false,
   };
 }
 
 /** Envia a CNH para a verificação automática (resposta em segundos; o app acompanha) */
 export async function saveCnh({ image, securityCode }: CnhSubmission): Promise<DriverAccount> {
   const form = new FormData();
-  form.append('image', image);
-  form.append('securityCode', securityCode);
+  if (image) form.append('image', image);
+  if (securityCode) form.append('securityCode', securityCode);
   await backend<DriverApplicationApi>('/api/users/me/driver/cnh', { method: 'POST', body: form });
   return getDriverAccount();
 }
@@ -148,7 +150,7 @@ export async function publishRoute(route: Partial<NewDriverRoute> & { originStat
         longitude: route.destination.coordinates[0],
         address: route.destination.address || route.destination.name,
       },
-      route: directions?.geometry.coordinates.map(([lng, lat]) => ({ latitude: lat, longitude: lng })),
+      route: directions ? simplifyRoute(directions.geometry.coordinates).map(([lng, lat]) => ({ latitude: lat, longitude: lng })) : undefined,
       meetingPoint: route.departurePoint || null,
     },
   });

@@ -186,6 +186,8 @@ export interface DriverApplicationApi {
   reason: string | null;
   categoria: string | null;
   validade: string | null;
+  /** Modo de testes do backend: a CNH não é conferida */
+  testMode: boolean;
 }
 
 export type CompanyKind = 'MEI' | 'EMPRESA';
