@@ -1,17 +1,21 @@
 'use client';
 
+import { useState } from 'react';
 import Link from 'next/link';
-import { Building2, CarFront, ChevronRight, FileText, Gift, LogOut, Repeat, Settings, User } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Building2, CarFront, ChevronRight, FileText, Gift, LogOut, Repeat, Settings, ShieldCheck, User } from 'lucide-react';
 import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
 import ButtonBase from '@mui/material/ButtonBase';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import AdSlot from '@/components/AdSlot';
+import { useSession } from '@/hooks/useSession';
+import { signOut } from '@/services/auth';
 import OptionList, { type MenuOption } from './OptionList';
 
 const ACCOUNT_OPTIONS: MenuOption[] = [
-  { label: 'Perfil', description: 'Nome, foto, telefone e e-mail', href: '/perfil', icon: User },
+  { label: 'Perfil', description: 'Nome, telefone e e-mail', href: '/perfil', icon: User },
   { label: 'Empresa', description: 'CNPJ, gestores e fretes', href: '/empresa', icon: Building2 },
   { label: 'Recompensas', description: 'Seus cupons e missões', href: '/recompensas', icon: Gift, badge: 'Ganhe R$ 15' },
   { label: 'Configurações', description: 'Tema e notificações', href: '/configuracoes', icon: Settings },
@@ -19,16 +23,23 @@ const ACCOUNT_OPTIONS: MenuOption[] = [
 
 const LEGAL_OPTIONS: MenuOption[] = [
   { label: 'Termos de uso', description: 'Regras de uso da plataforma', href: '/termos', icon: FileText },
+  { label: 'Privacidade', description: 'Como usamos os seus dados', href: '/privacidade', icon: ShieldCheck },
 ];
 
-interface MoreScreenProps {
-  userName: string;
-  userDetail: string;
-  avatarSrc?: string;
-}
-
 /** "Mais": atalhos da conta, recompensas, termos e um espaço de publicidade */
-export default function MoreScreen({ userName, userDetail, avatarSrc }: MoreScreenProps) {
+export default function MoreScreen({ avatarSrc }: { avatarSrc?: string }) {
+  const router = useRouter();
+  const session = useSession();
+  const [leaving, setLeaving] = useState(false);
+  const userName = session?.user.name || 'Sua conta';
+  const userDetail = session?.user.email ?? '';
+
+  const leave = async () => {
+    setLeaving(true);
+    await signOut();
+    router.replace('/login');
+  };
+
   return (
     <Stack spacing={3}>
       {/* Cartão do perfil */}
@@ -114,8 +125,8 @@ export default function MoreScreen({ userName, userDetail, avatarSrc }: MoreScre
       <OptionList title="Informações" options={LEGAL_OPTIONS} />
 
       <ButtonBase
-        component={Link}
-        href="/login"
+        onClick={leave}
+        disabled={leaving}
         sx={{
           gap: 1,
           py: 1.75,

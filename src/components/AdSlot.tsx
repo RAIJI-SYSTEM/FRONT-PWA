@@ -3,7 +3,7 @@
 import { useEffect, useRef, useState } from 'react';
 import Script from 'next/script';
 import Link from 'next/link';
-import { Gift, Package, Wallet, type LucideIcon } from 'lucide-react';
+import { Package, type LucideIcon } from 'lucide-react';
 import Box from '@mui/material/Box';
 import ButtonBase from '@mui/material/ButtonBase';
 import Stack from '@mui/material/Stack';
@@ -86,10 +86,9 @@ interface HouseAdContent {
   href: string;
 }
 
+// Indicação com crédito e carteira (Pix/saldo) ficam de fora até existirem no backend
 const HOUSE_ADS: HouseAdContent[] = [
-  { icon: Gift, title: 'Indique e ganhe R$ 10', description: 'Seu amigo viaja, vocês dois ganham crédito.', href: '/perfil' },
   { icon: Package, title: 'Precisa enviar algo?', description: 'Encomendas entregues no mesmo dia na sua cidade.', href: '/encomenda/nova' },
-  { icon: Wallet, title: 'Pague com Pix', description: 'Aprovação na hora, sem precisar de cartão.', href: '/carteira' },
 ];
 
 const ROTATE_MS = 8000;

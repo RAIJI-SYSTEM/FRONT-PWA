@@ -25,7 +25,7 @@ export default function OngoingActivities({ activities }: OngoingActivitiesProps
         <Typography id="ongoing-title" variant="h6" component="h2" sx={{ fontWeight: 600 }}>
           Acontecendo agora
         </Typography>
-        <Button component={Link} href="/historico" size="small" endIcon={<ChevronRight size={16} />}>
+        <Button component={Link} href="/corridas" size="small" endIcon={<ChevronRight size={16} />}>
           Ver histórico
         </Button>
       </Stack>

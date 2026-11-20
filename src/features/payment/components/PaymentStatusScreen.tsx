@@ -92,7 +92,7 @@ export default function PaymentStatusScreen({ kind, paymentIntentId, referenceId
         description="Pagamento aprovado. O motorista já foi avisado e você pode acompanhar a viagem pelo histórico."
         actions={
           <>
-            <Button component={Link} href="/historico" variant="contained" sx={pillButton}>
+            <Button component={Link} href="/corridas" variant="contained" sx={pillButton}>
               Acompanhar viagem
             </Button>
             <Button component={Link} href="/homepage" color="inherit" sx={pillButton}>

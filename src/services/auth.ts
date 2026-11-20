@@ -272,6 +272,16 @@ export async function signOut() {
   }
 }
 
+/**
+ * Abre a página "Minha conta" do Keycloak, onde a pessoa troca nome, e-mail e senha.
+ * No app abre na aba sobreposta (como o login); na web, em outra aba.
+ */
+export async function openAccountPage() {
+  const url = `${ISSUER}/account?referrer=${encodeURIComponent(CLIENT_ID)}`;
+  if (isNative()) await Browser.open({ url, toolbarColor: TOOLBAR_COLOR, presentationStyle: 'popover' });
+  else window.open(url, '_blank', 'noopener');
+}
+
 // ---------------------------------------------------------------------------
 // App Android: retorno do login por com.raiji.app://auth/callback
 // ---------------------------------------------------------------------------

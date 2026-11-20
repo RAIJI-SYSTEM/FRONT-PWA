@@ -167,6 +167,16 @@ export interface UserMeApi {
   realmRoles: string[];
 }
 
+/** GET /api/users/me/contact e resposta do PATCH /api/users/me */
+export interface ContactApi {
+  sub: string;
+  email: string | null;
+  fullName: string | null;
+  /** E.164, ex.: +5511912345678 */
+  phone: string | null;
+  photoUrl: string | null;
+}
+
 export interface VehicleApi {
   id: string;
   ownerSub: string;
