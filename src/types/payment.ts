@@ -1,26 +1,4 @@
-/** O que está sendo pago: uma passagem ou uma encomenda */
-export type PaymentKind = 'ride' | 'delivery';
+/** O que está sendo pago: a vaga numa carona (reserva) ou o espaço de uma encomenda */
+export type PaymentTarget = { kind: 'ride'; rideId: string; requestId: string } | { kind: 'delivery'; deliveryId: string };
 
-/** Status simplificado do pagamento, derivado do PaymentIntent do Stripe */
-export type PaymentStatus = 'processing' | 'succeeded' | 'failed';
-
-export interface CreatePaymentRequest {
-  kind: PaymentKind;
-  /** ID da busca de viagem ou da entrega */
-  referenceId: string;
-  offerId: string;
-}
-
-export interface CreatePaymentResponse {
-  clientSecret: string;
-  paymentIntentId: string;
-  amountCents: number;
-}
-
-export interface PaymentStatusResponse {
-  status: PaymentStatus;
-  /** Motivo da recusa, quando houver */
-  message?: string;
-  /** Encomendas: palavra-chave gerada após o pagamento */
-  keyword?: string;
-}
+export type PaymentKind = PaymentTarget['kind'];

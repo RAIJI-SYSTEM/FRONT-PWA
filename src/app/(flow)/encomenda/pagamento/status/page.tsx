@@ -4,23 +4,17 @@ import FlowTopBar from '@/components/FlowTopBar';
 import Redirect from '@/components/Redirect';
 import WithSearchParams from '@/components/WithSearchParams';
 import PaymentStatusScreen from '@/features/payment/components/PaymentStatusScreen';
-import { routes } from '@/utils/routes';
+import { paymentTargetFrom } from '@/features/payment/paths';
 
-/** /encomenda/pagamento/status?id=...&oferta=...&payment_intent=... */
-export default function DeliveryPaymentStatusPage() {
+/** Situação do pagamento, conferida pelo backend (o Stripe também volta para cá após o 3DS) */
+export default function PaymentStatusPage() {
   return (
     <>
-      <FlowTopBar title="Pagamento" backHref="/homepage" />
+      <FlowTopBar title="Pagamento" backHref="/encomendas" />
       <WithSearchParams>
         {(params) => {
-          const id = params.get('id');
-          // payment_intent é adicionado pelo app ou pelo próprio Stripe (ao voltar de um redirecionamento)
-          const paymentIntent = params.get('payment_intent');
-          if (!id) return <Redirect to="/homepage" />;
-          if (!paymentIntent) return <Redirect to={routes.delivery(id)} />;
-          return (
-            <PaymentStatusScreen kind="delivery" paymentIntentId={paymentIntent} referenceId={id} offerId={params.get('oferta') ?? undefined} />
-          );
+          const target = paymentTargetFrom('delivery', params);
+          return target ? <PaymentStatusScreen target={target} /> : <Redirect to="/encomendas" />;
         }}
       </WithSearchParams>
     </>

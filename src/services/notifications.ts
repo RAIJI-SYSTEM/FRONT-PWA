@@ -31,11 +31,17 @@ const TITLES: Record<string, string> = {
   FREIGHT_OFFER: 'Nova oferta de frete',
   FREIGHT_OFFER_ACCEPTED: 'Sua oferta foi escolhida',
   FREIGHT_OFFER_DECLINED: 'Oferta não escolhida',
+  RIDE_PAYMENT_RECEIVED: 'Vaga paga',
+  DELIVERY_PAYMENT_RECEIVED: 'Encomenda paga',
 };
 
 function toAppNotification(n: NotificationApi, mode: AppMode): AppNotification {
   const kind = n.kind ?? '';
-  const category: NotificationCategory = kind.startsWith('DELIVERY') || kind.startsWith('FREIGHT') ? 'deliveries' : 'trips';
+  const category: NotificationCategory = kind.endsWith('_PAYMENT_RECEIVED')
+    ? 'payments'
+    : kind.startsWith('DELIVERY') || kind.startsWith('FREIGHT')
+      ? 'deliveries'
+      : 'trips';
   let href: string | undefined;
   if (kind.startsWith('FREIGHT')) {
     href = n.audience === 'COMPANY' && n.referenceId ? `/empresa/frete?id=${n.referenceId}` : mode === 'driver' ? '/motorista/fretes' : undefined;

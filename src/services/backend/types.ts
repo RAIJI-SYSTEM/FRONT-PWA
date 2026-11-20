@@ -15,6 +15,21 @@ export interface CargoDetailsApi {
   observation?: string | null;
 }
 
+/**
+ * Pagamento de reserva ou encomenda (paga depois do aceite do motorista).
+ * NOT_REQUIRED: gratuita · PROCESSING: Pix gerado, aguardando o banco · REFUNDED: estornada
+ */
+export type PaymentStatusApi = 'NOT_REQUIRED' | 'UNPAID' | 'PROCESSING' | 'PAID' | 'REFUNDED';
+
+/** POST/GET .../payment. clientSecret só vem no POST, enquanto há algo a pagar */
+export interface PaymentApi {
+  status: PaymentStatusApi;
+  amountCents: number;
+  paidAt: string | null;
+  paymentIntentId: string | null;
+  clientSecret: string | null;
+}
+
 export interface RideApi {
   id: string;
   driverSub: string;
@@ -87,6 +102,8 @@ export interface BookingApi {
   confirmedAt: string | null;
   cancelledAt: string | null;
   cancellationReason: string | null;
+  paymentStatus: PaymentStatusApi;
+  paidAt: string | null;
 }
 
 export interface MyBookingApi {
@@ -132,6 +149,8 @@ export interface DeliveryApi {
   deliveredAt: string | null;
   cancelledAt: string | null;
   cancellationReason: string | null;
+  paymentStatus: PaymentStatusApi;
+  paidAt: string | null;
   ride: {
     id: string;
     driverSub: string;

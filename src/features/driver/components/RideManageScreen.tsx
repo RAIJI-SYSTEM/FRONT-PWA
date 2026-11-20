@@ -14,6 +14,7 @@ import Stack from '@mui/material/Stack';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import { describeBaggage } from '@/features/ride/baggage/baggageTypes';
+import PaymentChip from '@/features/payment/components/PaymentChip';
 import { backend, fromBrazilLocal, toCents } from '@/services/backend/client';
 import { usePolling } from '@/hooks/usePolling';
 import type { BookingApi, DeliveryApi, RideApi } from '@/services/backend/types';
@@ -242,7 +243,12 @@ export default function RideManageScreen({ rideId }: { rideId: string }) {
                   </Button>
                 </Stack>
               )}
-              {b.status !== 'PENDING' && <Chip size="small" sx={{ mt: 1 }} color="success" label={b.status === 'COMPLETED' ? 'Concluído' : 'Confirmado'} />}
+              {b.status !== 'PENDING' && (
+                <Stack direction="row" spacing={1} sx={{ mt: 1, flexWrap: 'wrap' }}>
+                  <Chip size="small" color="success" label={b.status === 'COMPLETED' ? 'Concluído' : 'Confirmado'} />
+                  <PaymentChip status={b.paymentStatus} />
+                </Stack>
+              )}
               {b.pendingBaggage.length > 0 && planned && (
                 <Alert
                   severity="info"
@@ -285,7 +291,10 @@ export default function RideManageScreen({ rideId }: { rideId: string }) {
                     De {d.senderName ?? 'remetente'} para {d.recipientName} · {d.lengthCm}×{d.widthCm}×{d.heightCm} cm
                   </Typography>
                 </Box>
-                <Chip size="small" label={DELIVERY_STATUS[d.status]} />
+                <Stack spacing={0.5} sx={{ alignItems: 'flex-end' }}>
+                  <Chip size="small" label={DELIVERY_STATUS[d.status]} />
+                  {d.status !== 'PENDING' && d.status !== 'CANCELLED' && <PaymentChip status={d.paymentStatus} />}
+                </Stack>
               </Stack>
               <Typography variant="body2" sx={{ mt: 0.5 }}>
                 Você recebe {d.driverReceives ? formatCurrency(toCents(d.driverReceives)) : 'R$ 0,00'}

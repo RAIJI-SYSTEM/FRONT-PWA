@@ -14,7 +14,7 @@ import { formatCurrency } from '@/utils/formatCurrency';
 
 interface CheckoutFormProps {
   amountCents: number;
-  /** Página de status para onde o passageiro vai após confirmar (inclui busca e oferta na query) */
+  /** Página de status para onde o passageiro vai após confirmar (ela consulta o backend) */
   statusPath: string;
 }
 
@@ -34,7 +34,7 @@ export default function CheckoutForm({ amountCents, statusPath }: CheckoutFormPr
     setError(null);
     setSubmitting(true);
 
-    const { error: stripeError, paymentIntent } = await stripe.confirmPayment({
+    const { error: stripeError } = await stripe.confirmPayment({
       elements,
       // Usado só por métodos que redirecionam (ex.: autenticação 3DS de alguns bancos)
       confirmParams: { return_url: `${window.location.origin}${statusPath}` },
@@ -49,8 +49,8 @@ export default function CheckoutForm({ amountCents, statusPath }: CheckoutFormPr
       return;
     }
 
-    const separator = statusPath.includes('?') ? '&' : '?';
-    router.push(`${statusPath}${separator}payment_intent=${paymentIntent.id}`);
+    // Quem decide se está pago é o backend (ele confere no Stripe): a tela de status pergunta a ele
+    router.push(statusPath);
   };
 
   return (

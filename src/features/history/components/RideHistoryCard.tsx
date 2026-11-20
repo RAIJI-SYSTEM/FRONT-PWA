@@ -2,10 +2,12 @@
 
 import { memo } from 'react';
 import Link from 'next/link';
-import { Briefcase, Car, CreditCard, QrCode, Users } from 'lucide-react';
+import { Briefcase, Car, CreditCard, Users } from 'lucide-react';
 import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
 import Typography from '@mui/material/Typography';
+import PaymentChip from '@/features/payment/components/PaymentChip';
+import { paymentPaths } from '@/features/payment/paths';
 import type { RideHistoryItem } from '@/types/history';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { formatDate, formatTime } from '@/utils/formatDate';
@@ -21,7 +23,9 @@ interface RideHistoryCardProps {
 
 function RideHistoryCard({ ride, onRate }: RideHistoryCardProps) {
   const canceled = ride.status === 'canceled';
-  const PaymentIcon = ride.paymentMethod === 'pix' ? QrCode : CreditCard;
+  const payTarget = ride.rideId && ride.bookingId ? ({ kind: 'ride', rideId: ride.rideId, requestId: ride.bookingId } as const) : null;
+  // Aceita pelo motorista e ainda não paga
+  const canPay = payTarget && ride.status === 'scheduled' && ride.paymentStatus === 'UNPAID';
 
   return (
     <HistoryCard
@@ -39,9 +43,7 @@ function RideHistoryCard({ ride, onRate }: RideHistoryCardProps) {
             {ride.distanceKm > 0 ? `${ride.distanceKm.toFixed(1).replace('.', ',')} km` : ''}
           </Typography>
           {ride.shared && <Chip icon={<Users size={14} />} label="Compartilhada" size="small" variant="outlined" />}
-          {!canceled && ride.status !== 'requested' && ride.priceCents > 0 && (
-            <Chip icon={<PaymentIcon size={14} />} label={ride.paymentMethod === 'pix' ? 'Pix' : 'Cartão'} size="small" variant="outlined" />
-          )}
+          {ride.status !== 'requested' && <PaymentChip status={ride.paymentStatus} />}
           {ride.baggageSummary && (
             <Chip
               icon={<Briefcase size={14} />}
@@ -58,6 +60,18 @@ function RideHistoryCard({ ride, onRate }: RideHistoryCardProps) {
               sx={{ borderRadius: 999, textTransform: 'none', fontWeight: 600 }}
             >
               Detalhes e bagagem
+            </Button>
+          )}
+          {canPay && (
+            <Button
+              size="small"
+              variant="contained"
+              component={Link}
+              href={paymentPaths.checkout(payTarget)}
+              startIcon={<CreditCard size={16} />}
+              sx={{ borderRadius: 999, textTransform: 'none', fontWeight: 700 }}
+            >
+              Pagar {formatCurrency(ride.priceCents)}
             </Button>
           )}
         </>

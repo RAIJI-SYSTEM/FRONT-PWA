@@ -43,7 +43,7 @@ export async function listRides(): Promise<RideHistoryItem[]> {
     priceCents: toCents(booking.price),
     distanceKm: (ride.routeDistanceMeters ?? 0) / 1000,
     shared: ride.totalSeats > 1,
-    paymentMethod: 'card',
+    paymentStatus: booking.paymentStatus,
     driver: { id: ride.driverSub, name: ride.driverName ?? 'Motorista', vehicle: '' },
     rating: ratings[`rides:${booking.id}`],
     rideId: ride.id,
@@ -72,6 +72,7 @@ export function toDeliveryHistory(d: DeliveryApi, rating?: DriverRating): Delive
     pickupCode: d.pickupCode,
     keyword: d.deliveryKeyword,
     companyId: d.companyId,
+    paymentStatus: d.paymentStatus,
   };
 }
 

@@ -1,4 +1,5 @@
 import type { PackageSize } from './delivery';
+import type { PaymentStatusApi } from '@/services/backend/types';
 
 export type HistoryKind = 'rides' | 'deliveries';
 
@@ -29,7 +30,8 @@ export interface RideHistoryItem {
   distanceKm: number;
   /** Corrida dividida com outros passageiros (tem grupo no chat) */
   shared: boolean;
-  paymentMethod: 'card' | 'pix';
+  /** Pago depois do aceite do motorista (situação conferida pelo backend no Stripe) */
+  paymentStatus: PaymentStatusApi;
   driver: HistoryDriver;
   rating?: DriverRating;
   /** Carona e pedido de vaga no backend (para ver detalhes / mudar a bagagem) */
@@ -64,6 +66,8 @@ export interface DeliveryHistoryItem {
   /** Palavra-chave que o destinatário diz ao motorista na entrega */
   keyword?: string | null;
   companyId?: string | null;
+  /** Pago depois do aceite do motorista (situação conferida pelo backend no Stripe) */
+  paymentStatus: PaymentStatusApi;
 }
 
 export interface RateDriverRequest {

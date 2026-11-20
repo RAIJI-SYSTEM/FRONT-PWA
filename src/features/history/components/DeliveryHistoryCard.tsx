@@ -1,10 +1,14 @@
 'use client';
 
 import { memo } from 'react';
-import { KeyRound, Package, User, Wine } from 'lucide-react';
+import Link from 'next/link';
+import { CreditCard, KeyRound, Package, User, Wine } from 'lucide-react';
+import Button from '@mui/material/Button';
 import Chip from '@mui/material/Chip';
 import Typography from '@mui/material/Typography';
 import { PACKAGE_SIZES } from '@/features/delivery/packageSizes';
+import PaymentChip from '@/features/payment/components/PaymentChip';
+import { paymentPaths } from '@/features/payment/paths';
 import type { DeliveryHistoryItem } from '@/types/history';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { formatDate, formatTime } from '@/utils/formatDate';
@@ -21,6 +25,8 @@ interface DeliveryHistoryCardProps {
 function DeliveryHistoryCard({ delivery, onRate }: DeliveryHistoryCardProps) {
   const canceled = delivery.status === 'canceled';
   const size = PACKAGE_SIZES.find((s) => s.value === delivery.size);
+  // Aceita pelo motorista e ainda não paga
+  const canPay = delivery.status === 'awaiting_pickup' && delivery.paymentStatus === 'UNPAID';
 
   return (
     <HistoryCard
@@ -42,6 +48,19 @@ function DeliveryHistoryCard({ delivery, onRate }: DeliveryHistoryCardProps) {
           )}
           {delivery.keyword && delivery.status !== 'delivered' && delivery.status !== 'canceled' && (
             <Chip icon={<KeyRound size={14} />} label={`Palavra-chave: ${delivery.keyword}`} size="small" color="secondary" />
+          )}
+          {delivery.status !== 'requested' && <PaymentChip status={delivery.paymentStatus} />}
+          {canPay && (
+            <Button
+              size="small"
+              variant="contained"
+              component={Link}
+              href={paymentPaths.checkout({ kind: 'delivery', deliveryId: delivery.id })}
+              startIcon={<CreditCard size={16} />}
+              sx={{ borderRadius: 999, textTransform: 'none', fontWeight: 700 }}
+            >
+              Pagar {formatCurrency(delivery.priceCents)}
+            </Button>
           )}
         </>
       }

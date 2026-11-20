@@ -1,8 +1,18 @@
-import type { CreatePaymentRequest, CreatePaymentResponse, PaymentStatusResponse } from '@/types/payment';
-import { apiFetch } from './api';
+import type { PaymentApi } from './backend/types';
+import { backend } from './backend/client';
+import type { PaymentTarget } from '@/types/payment';
 
-export const createPayment = (request: CreatePaymentRequest) =>
-  apiFetch<CreatePaymentResponse>('/api/payments', { method: 'POST', body: JSON.stringify(request) });
+/**
+ * Pagamentos pelo backend Raiji: ele cria a cobrança no Stripe com o valor do pedido e só
+ * marca como pago depois de conferir no Stripe. O app nunca informa valor nem "paguei".
+ */
+const paymentPath = (target: PaymentTarget) =>
+  target.kind === 'ride'
+    ? `/api/rides/${target.rideId}/requests/${target.requestId}/payment`
+    : `/api/deliveries/${target.deliveryId}/payment`;
 
-export const getPaymentStatus = (paymentIntentId: string) =>
-  apiFetch<PaymentStatusResponse>(`/api/payments/${paymentIntentId}`);
+/** Inicia (ou retoma) o pagamento: devolve o clientSecret para o formulário do Stripe */
+export const startPayment = (target: PaymentTarget) => backend<PaymentApi>(paymentPath(target), { method: 'POST' });
+
+/** Situação do pagamento (conferida no Stripe pelo backend) */
+export const getPayment = (target: PaymentTarget) => backend<PaymentApi>(paymentPath(target));

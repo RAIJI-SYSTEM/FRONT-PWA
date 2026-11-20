@@ -28,7 +28,7 @@ const RateDriverDialog = dynamic(loadRateDialog) as ComponentType<RateDriverDial
 type StatusFilter = 'all' | 'active' | 'completed' | 'canceled';
 type TypeFilter = 'all' | 'shared' | 'solo';
 type RatingFilter = 'all' | 'unrated' | 'rated';
-type PaymentFilter = 'all' | 'card' | 'pix';
+type PaymentFilter = 'all' | 'paid' | 'due';
 
 const STATUS_GROUPS: Record<StatusFilter, { label: string; includes: (s: RideHistoryStatus) => boolean }> = {
   all: { label: 'Todas', includes: () => true },
@@ -36,6 +36,9 @@ const STATUS_GROUPS: Record<StatusFilter, { label: string; includes: (s: RideHis
   completed: { label: 'Concluídas', includes: (s) => s === 'completed' },
   canceled: { label: 'Canceladas', includes: (s) => s === 'canceled' },
 };
+
+/** Ainda falta pagar (ou o Pix está em confirmação) */
+const isDue = (status: RideHistoryItem['paymentStatus']) => status === 'UNPAID' || status === 'PROCESSING';
 
 const DEFAULTS = { period: 'all' as Period, type: 'all' as TypeFilter, rating: 'all' as RatingFilter, payment: 'all' as PaymentFilter };
 
@@ -67,7 +70,7 @@ export default function RidesScreen() {
     inPeriod(ride.date, filters.period) &&
     (filters.type === 'all' || ride.shared === (filters.type === 'shared')) &&
     (filters.rating === 'all' || (filters.rating === 'unrated' ? needsRating(ride) : Boolean(ride.rating))) &&
-    (filters.payment === 'all' || ride.paymentMethod === filters.payment);
+    (filters.payment === 'all' || (filters.payment === 'paid' ? ride.paymentStatus === 'PAID' : isDue(ride.paymentStatus)));
 
   const base = items.filter(matchesOthers);
   const visible = base.filter((ride) => STATUS_GROUPS[status].includes(ride.status));
@@ -157,8 +160,8 @@ export default function RidesScreen() {
           label="Pagamento"
           options={[
             { value: 'all', label: 'Todos' },
-            { value: 'card', label: 'Cartão' },
-            { value: 'pix', label: 'Pix' },
+            { value: 'paid', label: 'Pagas' },
+            { value: 'due', label: 'A pagar' },
           ]}
           value={filters.payment}
           onChange={(payment) => setFilters((f) => ({ ...f, payment }))}

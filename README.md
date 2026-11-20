@@ -47,8 +47,7 @@ Preencha o `.env.local`:
 | Variável | Para quê | Obrigatória? |
 |---|---|---|
 | `NEXT_PUBLIC_MAPBOX_TOKEN` | Mapas e busca de endereços | Sim (sem ela o mapa não carrega) |
-| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY`, `STRIPE_SECRET_KEY` | Pagamentos (use as chaves de **teste** `pk_test_` / `sk_test_`) | Para pagar |
-| `STRIPE_WEBHOOK_SECRET` | Confirmação de pagamentos pelo Stripe | Opcional em dev |
+| `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY` | Formulário de pagamento (chave **pública** de teste, `pk_test_`) | Para pagar |
 | `MOBILE_API_URL` | Endereço do PC visto pelo celular, ex.: `http://192.168.0.10:3000` | **Sim, para o app Android** |
 | `NEXT_PUBLIC_KEYCLOAK_URL` | Login (Keycloak atrás do Kong). No celular, use o IP do PC: `http://192.168.0.10:8000` | Para o login |
 | `NEXT_PUBLIC_ADMOB_*`, `NEXT_PUBLIC_ADSENSE_*` | Anúncios. Sem eles, o app usa anúncios de teste ou promoções próprias | Não |
@@ -146,6 +145,24 @@ docker compose up --build -d
 - No celular, `NEXT_PUBLIC_KEYCLOAK_URL` precisa usar o **IP do PC** (`http://192.168.0.10:8000`), não `localhost`.
 
 O resto do app funciona com os mocks mesmo sem o backend rodando.
+
+---
+
+## Pagamentos (Stripe)
+
+Quem cobra e confirma é o **backend** (monolith): ele cria a cobrança no Stripe com o valor da reserva ou encomenda e só marca como paga depois de conferir no próprio Stripe. O app só mostra o formulário de cartão/Pix.
+
+- O passageiro (ou remetente) paga **depois que o motorista aceita**: aparece "Pagar" em "Minha reserva" e nos cartões de "Corridas"/"Encomendas".
+- Cancelou depois de pagar? O backend estorna sozinho.
+- Chaves de teste:
+  - no `raiji-app/.env.local`, só a pública: `NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY=pk_test_...`;
+  - no `monolith/.env`, a secreta: `STRIPE_API_KEY=sk_test_...`.
+- Cartão de teste: `4242 4242 4242 4242`, qualquer validade futura e qualquer CVC.
+- **Webhook (opcional em dev):** sem ele tudo funciona, porque o app consulta a situação. Com ele, um Pix pago com o app fechado já aparece como pago na hora. Para ligar em dev:
+  ```bash
+  stripe listen --forward-to http://localhost:8000/api/public/stripe/webhook
+  # copie o whsec_... que ele mostra para STRIPE_WEBHOOK_SECRET no monolith/.env e reinicie o backend
+  ```
 
 ---
 

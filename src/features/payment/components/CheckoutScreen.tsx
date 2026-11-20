@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { loadStripe } from '@stripe/stripe-js';
 import { Elements } from '@stripe/react-stripe-js';
 import Alert from '@mui/material/Alert';
@@ -12,14 +13,13 @@ import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import RouteSummary from '@/features/activities/components/RouteSummary';
-import { getDelivery } from '@/services/deliveries';
-import { createPayment } from '@/services/payments';
-import { getRideSearch } from '@/services/rideSearch';
-import type { CreatePaymentResponse, PaymentKind } from '@/types/payment';
-import type { Place } from '@/types/place';
-import type { RideOffer } from '@/types/ride';
+import { useQuery } from '@/hooks/useQuery';
+import { getDeliveryApi } from '@/services/deliveries';
+import { startPayment } from '@/services/payments';
+import { getRide } from '@/services/rides';
+import type { PaymentTarget } from '@/types/payment';
 import { formatCurrency } from '@/utils/formatCurrency';
-import { useStripeAppearance } from '../hooks/useStripeAppearance';
+import { STRIPE_FONTS, useStripeAppearance } from '../hooks/useStripeAppearance';
 import { paymentPaths } from '../paths';
 import CheckoutForm from './CheckoutForm';
 
@@ -27,75 +27,86 @@ const publishableKey = process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY;
 // Carregado uma única vez, fora do componente, como recomenda o Stripe
 const stripePromise = publishableKey ? loadStripe(publishableKey) : null;
 
-interface CheckoutScreenProps {
-  kind: PaymentKind;
-  /** ID da busca de viagem ou da entrega */
-  referenceId: string;
-  offerId: string;
+interface Summary {
+  driverName: string;
+  origin: string;
+  destination: string;
+  description: string;
 }
 
-interface CheckoutData {
-  route: { origin: Place; destination: Place };
-  offer: RideOffer;
-  payment: CreatePaymentResponse;
-}
-
-/** Viagem e encomenda têm origem, destino e ofertas: basta buscar no lugar certo */
-const loadReference = (kind: PaymentKind, id: string) => (kind === 'delivery' ? getDelivery(id) : getRideSearch(id));
-
-export default function CheckoutScreen({ kind, referenceId, offerId }: CheckoutScreenProps) {
-  const appearance = useStripeAppearance();
-  const [data, setData] = useState<CheckoutData | null>(null);
-  const [error, setError] = useState<string | null>(stripePromise ? null : 'Stripe não configurado: defina NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY no .env.local');
-
-  useEffect(() => {
-    if (!stripePromise) return;
-    let active = true;
-
-    Promise.all([loadReference(kind, referenceId), createPayment({ kind, referenceId, offerId })])
-      .then(([reference, payment]) => {
-        const offer = reference.offers.find((o) => o.id === offerId);
-        if (!active) return;
-        if (!offer) throw new Error('Esta oferta não está mais disponível.');
-        setData({ route: { origin: reference.origin, destination: reference.destination }, offer, payment });
-      })
-      .catch((err) => active && setError(err instanceof Error ? err.message : 'Não foi possível iniciar o pagamento.'));
-
-    return () => {
-      active = false;
+/** Resumo do que está sendo pago (motorista e trajeto), lido do backend */
+async function loadSummary(target: PaymentTarget): Promise<Summary> {
+  if (target.kind === 'ride') {
+    const { ride } = await getRide(target.rideId);
+    return {
+      driverName: ride.driverName ?? 'Motorista',
+      origin: `${ride.originCity}, ${ride.originState}`,
+      destination: `${ride.destinationCity}, ${ride.destinationState}`,
+      description: 'Vaga na carona',
     };
-  }, [kind, referenceId, offerId]);
+  }
+  const delivery = await getDeliveryApi(target.deliveryId);
+  return {
+    driverName: delivery.ride?.driverName ?? 'Motorista',
+    origin: delivery.pickupAddress ?? delivery.ride?.originCity ?? 'Origem',
+    destination: delivery.dropoffAddress ?? delivery.ride?.destinationCity ?? 'Destino',
+    description: 'Envio da encomenda',
+  };
+}
 
+/** "Informar método e dados de pagamento" de uma reserva ou encomenda já aceita pelo motorista */
+export default function CheckoutScreen({ target }: { target: PaymentTarget }) {
+  const router = useRouter();
+  const appearance = useStripeAppearance();
+  const statusPath = paymentPaths.status(target);
+  // A URL identifica o pedido: a cobrança só é iniciada de novo se o pedido mudar
+  const { data, error } = useQuery(stripePromise ? statusPath : null, () =>
+    Promise.all([loadSummary(target), startPayment(target), stripePromise]).then(([summary, payment, stripe]) => ({
+      summary,
+      payment,
+      stripe,
+    })),
+  );
+  const alreadySettled = data && !data.payment.clientSecret;
+
+  // Já pago, Pix aguardando o banco ou estornado: não há formulário, só a situação
+  useEffect(() => {
+    if (alreadySettled) router.replace(statusPath);
+  }, [alreadySettled, router, statusPath]);
+
+  if (!stripePromise) {
+    return <Alert severity="error" sx={{ mt: 2 }}>Stripe não configurado: defina NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY no .env.local</Alert>;
+  }
   if (error) return <Alert severity="error" sx={{ mt: 2 }}>{error}</Alert>;
-  if (!data) {
+  const clientSecret = data?.payment.clientSecret;
+  if (!data || !clientSecret) {
     return (
-      <Stack sx={{ alignItems: 'center', py: 8 }}>
+      <Stack sx={{ alignItems: 'center', py: 8 }} role="status" aria-label="Preparando o pagamento">
         <CircularProgress />
       </Stack>
     );
   }
 
-  const { route, offer, payment } = data;
-  const statusPath = paymentPaths[kind].status(referenceId, offerId);
+  const { summary, payment } = data;
 
   return (
     <Stack spacing={2.5}>
-      {/* Resumo da viagem escolhida */}
+      {/* Resumo do que está sendo pago */}
       <Paper variant="outlined" sx={{ p: 2.5, borderRadius: 3 }}>
         <Stack direction="row" spacing={2} sx={{ alignItems: 'center', mb: 2 }}>
           <Avatar sx={{ bgcolor: 'primary.main', color: 'primary.contrastText', fontWeight: 700 }}>
-            {offer.driverName.charAt(0)}
+            {summary.driverName.charAt(0)}
           </Avatar>
           <Box sx={{ flex: 1, minWidth: 0 }}>
             <Typography sx={{ fontWeight: 700 }} noWrap>
-              {offer.driverName}
+              {summary.driverName}
             </Typography>
             <Typography variant="body2" color="text.secondary" noWrap>
-              {offer.vehicle}
+              {summary.description}
             </Typography>
           </Box>
         </Stack>
-        <RouteSummary origin={route.origin.name} destination={route.destination.name} />
+        <RouteSummary origin={summary.origin} destination={summary.destination} />
         <Divider sx={{ my: 2 }} />
         <Stack direction="row" sx={{ justifyContent: 'space-between', alignItems: 'baseline' }}>
           <Typography color="text.secondary">Total</Typography>
@@ -107,7 +118,12 @@ export default function CheckoutScreen({ kind, referenceId, offerId }: CheckoutS
         <Typography component="h2" variant="h6" sx={{ fontWeight: 700, mb: 2 }}>
           Forma de pagamento
         </Typography>
-        <Elements stripe={stripePromise} options={{ clientSecret: payment.clientSecret, appearance, locale: 'pt-BR' }}>
+        {/* A instância já carregada (e não a promessa): o <Elements> do react-stripe-js 7 perde a
+            promessa no modo estrito do React (desenvolvimento) e o formulário não aparece */}
+        <Elements
+          stripe={data.stripe}
+          options={{ clientSecret, appearance, fonts: STRIPE_FONTS, locale: 'pt-BR' }}
+        >
           <CheckoutForm amountCents={payment.amountCents} statusPath={statusPath} />
         </Elements>
       </Paper>

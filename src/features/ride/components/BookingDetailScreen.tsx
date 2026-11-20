@@ -17,6 +17,7 @@ import { fromBrazilLocal, toCents } from '@/services/backend/client';
 import { cancelBooking, listMyBookings, updateBaggage } from '@/services/rides';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { formatDate, formatTime } from '@/utils/formatDate';
+import PaymentPanel from '@/features/payment/components/PaymentPanel';
 import BaggageEditor from '../baggage/BaggageEditor';
 import { describeBaggage } from '../baggage/baggageTypes';
 
@@ -70,7 +71,8 @@ export default function BookingDetailScreen({ bookingId }: { bookingId: string }
   };
 
   const cancel = async () => {
-    if (!window.confirm('Cancelar esta reserva?')) return;
+    const refund = booking.paymentStatus === 'PAID' ? ' O valor pago será estornado.' : '';
+    if (!window.confirm(`Cancelar esta reserva?${refund}`)) return;
     setSaving(true);
     try {
       await cancelBooking(ride.id, booking.id);
@@ -103,6 +105,15 @@ export default function BookingDetailScreen({ bookingId }: { bookingId: string }
         )}
         <Typography sx={{ fontWeight: 800, mt: 1 }}>{booking.price ? formatCurrency(toCents(booking.price)) : 'Grátis'}</Typography>
       </Paper>
+
+      <PaymentPanel
+        target={{ kind: 'ride', rideId: ride.id, requestId: booking.id }}
+        status={booking.paymentStatus}
+        amountCents={toCents(booking.price)}
+        paidAt={booking.paidAt}
+        awaitingAcceptance={booking.status === 'PENDING'}
+        canPay={booking.status === 'CONFIRMED' && ride.status !== 'CANCELLED' && ride.status !== 'COMPLETED'}
+      />
 
       <Stack spacing={1}>
         <Stack direction="row" spacing={1} sx={{ alignItems: 'center' }}>
