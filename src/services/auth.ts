@@ -145,6 +145,12 @@ function toSession(tokens: {
   };
 }
 
+/** Role "admin" do realm (Keycloak): libera as telas da plataforma, como os repasses */
+export function isAdmin(session: Session | null): boolean {
+  const access = decodeJwt(session?.accessToken)?.realm_access as { roles?: string[] } | undefined;
+  return access?.roles?.includes('admin') ?? false;
+}
+
 function decodeJwt(token?: string): Record<string, unknown> | null {
   if (!token) return null;
   try {

@@ -33,7 +33,12 @@ export interface RouteReviewContext {
 
 interface RoutePickerProps {
   title: string;
-  backHref: string;
+  backHref?: string;
+  /** Voltar sem sair da página (ex.: etapa anterior). Tem prioridade sobre backHref. */
+  onBack?: () => void;
+  /** Pontos já escolhidos (ao voltar para o mapa): abre direto na revisão */
+  initialOrigin?: Place | null;
+  initialDestination?: Place | null;
   labels?: {
     origin: string;
     destination: string;
@@ -42,7 +47,7 @@ interface RoutePickerProps {
   };
   /** Conteúdo do painel na revisão (ex.: horário e botão de envio, com type="submit") */
   renderReview: (context: RouteReviewContext) => ReactNode;
-  onSubmit: (origin: Place, destination: Place) => void;
+  onSubmit: (origin: Place, destination: Place, route: DrivingRoute | null) => void;
   /** Erro vindo de quem usa o componente (ex.: falha na API) */
   error?: string | null;
 }
@@ -59,11 +64,22 @@ const DEFAULT_LABELS = {
  * no topo e pino fixo no centro. O usuário arrasta o mapa ou digita o endereço (o pino vai até
  * ele) e confirma cada ponto. Usado por viagens e encomendas.
  */
-export default function RoutePicker({ title, backHref, labels = DEFAULT_LABELS, renderReview, onSubmit, error }: RoutePickerProps) {
+export default function RoutePicker({
+  title,
+  backHref,
+  onBack,
+  initialOrigin = null,
+  initialDestination = null,
+  labels = DEFAULT_LABELS,
+  renderReview,
+  onSubmit,
+  error,
+}: RoutePickerProps) {
   useLockPageScroll();
-  const [step, setStep] = useState<Step>('origin');
-  const [origin, setOrigin] = useState<Place | null>(null);
-  const [destination, setDestination] = useState<Place | null>(null);
+  const resuming = Boolean(initialOrigin && initialDestination);
+  const [step, setStep] = useState<Step>(resuming ? 'review' : 'origin');
+  const [origin, setOrigin] = useState<Place | null>(initialOrigin);
+  const [destination, setDestination] = useState<Place | null>(initialDestination);
   const [resolving, setResolving] = useState(false);
   const [moving, setMoving] = useState(false);
   const [focus, setFocus] = useState<{ point: LngLat; key: number }>();
@@ -123,8 +139,27 @@ export default function RoutePicker({ title, backHref, labels = DEFAULT_LABELS, 
     );
   };
 
+  // Voltando com os pontos já escolhidos: desenha a rota de novo (a revisão já está aberta)
+  useEffect(() => {
+    if (!initialOrigin || !initialDestination) return;
+    const controller = new AbortController();
+    routeAbort.current = controller;
+    getDrivingRoute(initialOrigin.coordinates, initialDestination.coordinates, controller.signal)
+      .then(setRoute)
+      .catch(() => undefined);
+    return () => controller.abort();
+  }, [initialOrigin, initialDestination]);
+
   // Começa na localização do usuário, já preenchendo a origem (se ele permitir)
   useEffect(() => {
+    if (resuming) {
+      // Só centraliza a busca de endereços perto do usuário; os pontos já foram escolhidos
+      navigator.geolocation?.getCurrentPosition(({ coords }) => setUserLocation([coords.longitude, coords.latitude]), () => undefined, {
+        maximumAge: 5 * 60_000,
+        timeout: 10_000,
+      });
+      return;
+    }
     navigator.geolocation?.getCurrentPosition(
       ({ coords }) => {
         const point: LngLat = [coords.longitude, coords.latitude];
@@ -135,7 +170,7 @@ export default function RoutePicker({ title, backHref, labels = DEFAULT_LABELS, 
       () => undefined, // recusar aqui é normal: o usuário escolhe no mapa ou digita
       { maximumAge: 5 * 60_000, timeout: 10_000 },
     );
-  }, []);
+  }, [resuming]);
 
   // Recebe os pontos explicitamente: logo após um setOrigin/setDestination o estado ainda é o antigo
   const goToStep = async (next: Step, from = origin, to = destination) => {
@@ -183,7 +218,7 @@ export default function RoutePicker({ title, backHref, labels = DEFAULT_LABELS, 
 
   const handleSubmit = (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
-    if (step === 'review' && origin && destination) onSubmit(origin, destination);
+    if (step === 'review' && origin && destination) onSubmit(origin, destination, route);
   };
 
   const picking: PickTarget | null = step === 'review' ? null : step;
@@ -195,7 +230,7 @@ export default function RoutePicker({ title, backHref, labels = DEFAULT_LABELS, 
     <Box sx={{ position: 'fixed', inset: 0, display: 'flex', flexDirection: 'column', bgcolor: 'background.default' }}>
       <Box sx={{ bgcolor: 'background.default', zIndex: 2, borderBottom: 1, borderColor: 'divider' }}>
         <Container maxWidth="sm" sx={{ px: { xs: 2, sm: 3 } }}>
-          <FlowTopBar title={title} backHref={backHref} />
+          <FlowTopBar title={title} backHref={backHref} onBack={onBack} />
         </Container>
       </Box>
 

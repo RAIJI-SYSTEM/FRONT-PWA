@@ -6,7 +6,7 @@ import { ApiError } from './api';
 import { backend, fromBrazilLocal, toBrazilLocal, toCents, toReais } from './backend/client';
 import type { AcceptAllApi, BookingApi, DeliveryApi, DriverApplicationApi, RideApi, UserMeApi, VehicleApi } from './backend/types';
 import { simplifyRoute } from '@/utils/simplifyRoute';
-import { getDrivingRoute } from './mapbox';
+import { getDrivingRoute, type DrivingRoute } from './mapbox';
 
 /** Modo motorista sobre o backend Raiji: cadastro (CNH real), veículos, rotas (caronas) e pedidos. */
 
@@ -42,6 +42,7 @@ export async function getDriverAccount(): Promise<DriverAccount> {
     vehicles: vehicles.filter((v) => v.active).map(toVehicle),
     review: application && application.status !== 'NONE' ? { status: application.status, reason: application.reason } : undefined,
     testMode: application?.testMode ?? false,
+    securityCodeRequired: application?.securityCodeRequired ?? true,
   };
 }
 
@@ -123,11 +124,15 @@ export const stateOf = (place: { state?: string; address?: string }) =>
  * Publica a carona com o caminho de verdade (Mapbox Directions): é ele que permite
  * achar passageiros e encomendas no meio do caminho.
  */
-export async function publishRoute(route: Partial<NewDriverRoute> & { originState?: string; destinationState?: string }) {
+export async function publishRoute(
+  route: Partial<NewDriverRoute> & { originState?: string; destinationState?: string; directions?: DrivingRoute | null },
+) {
   if (!route.origin || !route.destination || !route.departureAt || !route.vehicleId) {
     throw new ApiError('Preencha origem, destino, horário e veículo.', 400);
   }
-  const directions = await getDrivingRoute(route.origin.coordinates, route.destination.coordinates).catch(() => null);
+  // O trajeto já calculado no mapa é reaproveitado; senão, calcula aqui
+  const directions =
+    route.directions ?? (await getDrivingRoute(route.origin.coordinates, route.destination.coordinates).catch(() => null));
   const seats = route.seats ?? 0;
   const type = route.acceptsPackages ? (seats > 0 ? 'MIXED' : 'CARGO') : 'PASSENGER';
   const ride = await backend<RideApi>('/api/rides', {

@@ -86,7 +86,9 @@ export default function DriverOnboardingScreen() {
     setApiError(null);
     if (current === 'cnh') {
       // Modo de testes: a CNH não é conferida, foto e código são opcionais
-      const found: Record<string, string | undefined> = account.testMode ? {} : validateCnhVerification(cnh);
+      const found: Record<string, string | undefined> = account.testMode
+        ? {}
+        : validateCnhVerification(cnh, account.securityCodeRequired !== false);
       setErrors(found);
       if (Object.values(found).some(Boolean)) return;
     } else {
@@ -176,6 +178,7 @@ export default function DriverOnboardingScreen() {
             setErrors((e) => clearFieldErrors(e, changes));
           }}
           errors={errors}
+          askSecurityCode={account.securityCodeRequired !== false}
         />
       ) : (
         <VehicleForm

@@ -97,7 +97,11 @@ export interface BookingApi {
   pendingBaggage: BaggageItemApi[];
   fullRoute: boolean;
   price: number | null;
+  pickupLatitude: number | null;
+  pickupLongitude: number | null;
   pickupAddress: string | null;
+  dropoffLatitude: number | null;
+  dropoffLongitude: number | null;
   dropoffAddress: string | null;
   confirmedAt: string | null;
   cancelledAt: string | null;
@@ -217,6 +221,8 @@ export interface DriverApplicationApi {
   validade: string | null;
   /** Modo de testes do backend: a CNH não é conferida */
   testMode: boolean;
+  /** false = o backend confere a CNH só pela foto (sem SENATRAN) e não pede o código de segurança */
+  securityCodeRequired?: boolean;
 }
 
 export type CompanyKind = 'MEI' | 'EMPRESA';

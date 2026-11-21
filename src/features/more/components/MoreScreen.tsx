@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Building2, CarFront, ChevronRight, FileText, Gift, LogOut, Repeat, Settings, ShieldCheck, User } from 'lucide-react';
+import { Building2, CarFront, ChevronRight, FileText, Gift, HandCoins, LogOut, Repeat, Settings, ShieldCheck, User } from 'lucide-react';
 import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
 import ButtonBase from '@mui/material/ButtonBase';
@@ -11,7 +11,7 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import AdSlot from '@/components/AdSlot';
 import { useSession } from '@/hooks/useSession';
-import { signOut } from '@/services/auth';
+import { isAdmin, signOut } from '@/services/auth';
 import OptionList, { type MenuOption } from './OptionList';
 
 const ACCOUNT_OPTIONS: MenuOption[] = [
@@ -19,6 +19,11 @@ const ACCOUNT_OPTIONS: MenuOption[] = [
   { label: 'Empresa', description: 'CNPJ, gestores e fretes', href: '/empresa', icon: Building2 },
   { label: 'Recompensas', description: 'Seus cupons e missões', href: '/recompensas', icon: Gift, badge: 'Ganhe R$ 15' },
   { label: 'Configurações', description: 'Tema e notificações', href: '/configuracoes', icon: Settings },
+];
+
+/** Só para a role "admin" do Keycloak */
+const ADMIN_OPTIONS: MenuOption[] = [
+  { label: 'Repasses aos motoristas', description: 'Quanto pagar por Pix a cada motorista', href: '/admin/repasses', icon: HandCoins },
 ];
 
 const LEGAL_OPTIONS: MenuOption[] = [
@@ -119,6 +124,8 @@ export default function MoreScreen({ avatarSrc }: { avatarSrc?: string }) {
       </ButtonBase>
 
       <OptionList title="Conta" options={ACCOUNT_OPTIONS} />
+
+      {isAdmin(session) && <OptionList title="Plataforma" options={ADMIN_OPTIONS} />}
 
       <AdSlot adSlotId={process.env.NEXT_PUBLIC_ADSENSE_SLOT_MORE} />
 

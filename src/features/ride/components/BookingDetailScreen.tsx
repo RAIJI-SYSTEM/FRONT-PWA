@@ -12,9 +12,12 @@ import Paper from '@mui/material/Paper';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { usePolling } from '@/hooks/usePolling';
+import { useQuery } from '@/hooks/useQuery';
+import TripMap from '@/features/map/components/TripMap';
+import { bookingPoints, pointOf, routeLine } from '@/features/map/tripPoints';
 import type { BaggageItemApi, MyBookingApi } from '@/services/backend/types';
 import { fromBrazilLocal, toCents } from '@/services/backend/client';
-import { cancelBooking, listMyBookings, updateBaggage } from '@/services/rides';
+import { cancelBooking, getRide, listMyBookings, updateBaggage } from '@/services/rides';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { formatDate, formatTime } from '@/utils/formatDate';
 import PaymentPanel from '@/features/payment/components/PaymentPanel';
@@ -35,6 +38,9 @@ export default function BookingDetailScreen({ bookingId }: { bookingId: string }
   const [editing, setEditing] = useState<BaggageItemApi[] | null>(null);
   const [saving, setSaving] = useState(false);
   const [notice, setNotice] = useState<string | null>(null);
+  // Trajeto do motorista, para o mapa (a reserva já traz os pontos)
+  const rideId = data?.item?.ride.id ?? null;
+  const { data: detail } = useQuery(rideId ? `ride-route:${rideId}` : null, () => getRide(rideId!));
 
   if (error) return <Alert severity="error">{error}</Alert>;
   if (data && !item) return <Alert severity="error">Reserva não encontrada.</Alert>;
@@ -48,6 +54,12 @@ export default function BookingDetailScreen({ bookingId }: { bookingId: string }
 
   const { booking, ride } = item;
   const departureAt = fromBrazilLocal(ride.departureDate);
+  const trip = bookingPoints(
+    ride,
+    pointOf(booking.pickupLatitude, booking.pickupLongitude),
+    pointOf(booking.dropoffLatitude, booking.dropoffLongitude),
+  );
+  const pickupLabel = booking.pickupAddress ?? ride.originAddress ?? ride.originCity;
   const editable = ride.status === 'PLANNED' && (booking.status === 'PENDING' || booking.status === 'CONFIRMED');
 
   const saveBaggage = async () => {
@@ -105,6 +117,14 @@ export default function BookingDetailScreen({ bookingId }: { bookingId: string }
         )}
         <Typography sx={{ fontWeight: 800, mt: 1 }}>{booking.price ? formatCurrency(toCents(booking.price)) : 'Grátis'}</Typography>
       </Paper>
+
+      {trip.points.length > 0 && (
+        <TripMap
+          route={routeLine(detail?.route)}
+          points={trip.points}
+          navigateTo={trip.embark && booking.status !== 'CANCELLED' ? { at: trip.embark, label: pickupLabel } : undefined}
+        />
+      )}
 
       <PaymentPanel
         target={{ kind: 'ride', rideId: ride.id, requestId: booking.id }}

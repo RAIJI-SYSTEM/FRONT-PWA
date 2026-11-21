@@ -51,6 +51,8 @@ export interface DriverAccount {
   review?: { status: 'PROCESSING' | 'APPROVED' | 'REJECTED' | 'ERROR'; reason: string | null };
   /** Backend em modo de testes: aprova sem conferir a CNH (foto e código opcionais) */
   testMode?: boolean;
+  /** O backend pede o código de segurança (só quando confere no SENATRAN) */
+  securityCodeRequired?: boolean;
 }
 
 /** Envio para a verificação automática: foto da CNH + código de segurança (verso / CNH digital) */

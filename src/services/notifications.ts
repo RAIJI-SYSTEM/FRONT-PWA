@@ -33,11 +33,12 @@ const TITLES: Record<string, string> = {
   FREIGHT_OFFER_DECLINED: 'Oferta não escolhida',
   RIDE_PAYMENT_RECEIVED: 'Vaga paga',
   DELIVERY_PAYMENT_RECEIVED: 'Encomenda paga',
+  DRIVER_PAYOUT_SENT: 'Repasse enviado',
 };
 
 function toAppNotification(n: NotificationApi, mode: AppMode): AppNotification {
   const kind = n.kind ?? '';
-  const category: NotificationCategory = kind.endsWith('_PAYMENT_RECEIVED')
+  const category: NotificationCategory = kind.endsWith('_PAYMENT_RECEIVED') || kind === 'DRIVER_PAYOUT_SENT'
     ? 'payments'
     : kind.startsWith('DELIVERY') || kind.startsWith('FREIGHT')
       ? 'deliveries'
@@ -46,6 +47,8 @@ function toAppNotification(n: NotificationApi, mode: AppMode): AppNotification {
   if (kind.startsWith('FREIGHT')) {
     href = n.audience === 'COMPANY' && n.referenceId ? `/empresa/frete?id=${n.referenceId}` : mode === 'driver' ? '/motorista/fretes' : undefined;
     if (kind === 'FREIGHT_OFFER_ACCEPTED' || kind === 'FREIGHT_ACCEPTED') href = mode === 'driver' ? '/motorista/rotas' : href;
+  } else if (kind === 'DRIVER_PAYOUT_SENT') {
+    href = '/motorista/repasses';
   } else if (mode === 'driver') {
     href = n.rideId ? `/motorista/rotas/gerenciar?id=${n.rideId}` : '/motorista/rotas';
   } else {

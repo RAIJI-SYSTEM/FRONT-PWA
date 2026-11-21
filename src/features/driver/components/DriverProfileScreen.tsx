@@ -224,6 +224,7 @@ export default function DriverProfileScreen() {
 
       {editing?.kind === 'cnh' && (
         <CnhDialog
+          askSecurityCode={account.securityCodeRequired !== false}
           onClose={() => setEditing(null)}
           onSaved={(updated) => {
             setData(updated);
@@ -268,14 +269,22 @@ function FormDialog({ title, saving, error, onClose, onSave, children }: { title
   );
 }
 
-function CnhDialog({ onClose, onSaved }: { onClose: () => void; onSaved: (account: DriverAccount) => void }) {
+function CnhDialog({
+  askSecurityCode,
+  onClose,
+  onSaved,
+}: {
+  askSecurityCode: boolean;
+  onClose: () => void;
+  onSaved: (account: DriverAccount) => void;
+}) {
   const [cnh, setCnh] = useState<CnhVerificationDraft>(EMPTY_CNH_VERIFICATION);
   const [errors, setErrors] = useState<Record<string, string | undefined>>({});
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
   const save = async () => {
-    const found: Record<string, string | undefined> = validateCnhVerification(cnh);
+    const found: Record<string, string | undefined> = validateCnhVerification(cnh, askSecurityCode);
     setErrors(found);
     if (Object.values(found).some(Boolean)) return;
     setSaving(true);
@@ -298,6 +307,7 @@ function CnhDialog({ onClose, onSaved }: { onClose: () => void; onSaved: (accoun
           setErrors((e) => clearFieldErrors(e, changes));
         }}
         errors={errors}
+        askSecurityCode={askSecurityCode}
       />
     </FormDialog>
   );

@@ -16,10 +16,13 @@ import Typography from '@mui/material/Typography';
 import ActionBar from '@/components/ActionBar';
 import StatusScreen from '@/components/StatusScreen';
 import { useSession } from '@/hooks/useSession';
+import { useQuery } from '@/hooks/useQuery';
+import TripMap from '@/features/map/components/TripMap';
+import { bookingPoints, routeLine } from '@/features/map/tripPoints';
 import type { BaggageItemApi } from '@/services/backend/types';
 import { fromBrazilLocal, toCents } from '@/services/backend/client';
 import { getSearchResult } from '@/services/rideSearch';
-import { requestSeat } from '@/services/rides';
+import { getRide, requestSeat } from '@/services/rides';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { formatDate, formatTime } from '@/utils/formatDate';
 import BaggageEditor from '../baggage/BaggageEditor';
@@ -39,6 +42,8 @@ export default function RideRequestScreen({ searchId, rideId }: { searchId: stri
   const [sending, setSending] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [sent, setSent] = useState(false);
+  // Trajeto do motorista para o mapa
+  const { data: detail } = useQuery(found ? `ride-route:${rideId}` : null, () => getRide(rideId));
 
   if (!found) {
     return (
@@ -52,6 +57,11 @@ export default function RideRequestScreen({ searchId, rideId }: { searchId: stri
   const ride = result.ride;
   const departureAt = fromBrazilLocal(ride.departureDate);
   const passengerName = name ?? session?.user.name ?? '';
+  // Viagem inteira: embarca onde o motorista sai. Trecho: nos pontos da busca.
+  const trip = result.fullRoute
+    ? bookingPoints(ride, null, null)
+    : bookingPoints(ride, search.origin.coordinates, search.destination.coordinates);
+  const pickupLabel = result.fullRoute ? (ride.originAddress ?? ride.originCity) : search.origin.name;
 
   const submit = async () => {
     setError(null);
@@ -127,6 +137,10 @@ export default function RideRequestScreen({ searchId, rideId }: { searchId: stri
           </Typography>
         </Stack>
       </Paper>
+
+      {trip.points.length > 0 && (
+        <TripMap route={routeLine(detail?.route)} points={trip.points} navigateTo={trip.embark ? { at: trip.embark, label: pickupLabel } : undefined} />
+      )}
 
       <TextField label="Seu nome" value={passengerName} onChange={(e) => setName(e.target.value)} />
 

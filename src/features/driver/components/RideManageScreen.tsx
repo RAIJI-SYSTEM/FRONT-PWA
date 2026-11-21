@@ -31,6 +31,8 @@ import {
   startRide,
 } from '@/services/driverMode';
 import { getRide } from '@/services/rides';
+import TripMap, { type TripPoint } from '@/features/map/components/TripMap';
+import { pointOf, rideEnd, rideStart, routeLine } from '@/features/map/tripPoints';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { formatDate, formatTime } from '@/utils/formatDate';
 
@@ -51,12 +53,12 @@ const DELIVERY_STATUS: Record<DeliveryApi['status'], string> = {
 
 const keepPolling = () => true;
 async function loadRide(rideId: string) {
-  const { ride } = await getRide(rideId);
+  const { ride, route } = await getRide(rideId);
   const [bookings, deliveries] = await Promise.all([
     ride.type === 'CARGO' ? Promise.resolve([] as BookingApi[]) : listRideBookings(rideId),
     ride.type === 'PASSENGER' ? Promise.resolve([] as DeliveryApi[]) : listRideDeliveries(rideId),
   ]);
-  return { ride, bookings, deliveries, loadedAt: Date.now() };
+  return { ride, route, bookings, deliveries, loadedAt: Date.now() };
 }
 
 type CodeDialog = { delivery: DeliveryApi; action: 'pickup' | 'deliver' } | null;
@@ -108,6 +110,21 @@ export default function RideManageScreen({ rideId }: { rideId: string }) {
   const confirmed = bookings.filter((b) => b.status === 'CONFIRMED' || b.status === 'COMPLETED');
   const fullRoutePending = pending.filter((b) => b.fullRoute).length;
   const canStart = planned && Date.parse(departureAt) - (data?.loadedAt ?? 0) <= 60 * 60_000;
+
+  // Mapa: saída/chegada e o embarque de quem pega no meio do caminho
+  const start = rideStart(ride);
+  const end = rideEnd(ride);
+  const firstName = (name: string) => name.split(' ')[0];
+  const mapPoints: TripPoint[] = [
+    ...(start ? [{ at: start, label: 'Saída', kind: 'driver' as const }] : []),
+    ...(end ? [{ at: end, label: 'Chegada', kind: 'driver' as const }] : []),
+    ...bookings
+      .filter((b) => (b.status === 'PENDING' || b.status === 'CONFIRMED') && !b.fullRoute)
+      .flatMap((b) => {
+        const pickup = pointOf(b.pickupLatitude, b.pickupLongitude);
+        return pickup ? [{ at: pickup, label: `Embarque: ${firstName(b.passengerName)}`, kind: 'pickup' as const }] : [];
+      }),
+  ];
 
   const decide = (b: BookingApi, accept: boolean) =>
     run(
@@ -193,6 +210,8 @@ export default function RideManageScreen({ rideId }: { rideId: string }) {
           </Typography>
         )}
       </Paper>
+
+      {mapPoints.length > 0 && <TripMap route={routeLine(data?.route)} points={mapPoints} />}
 
       {notice && (
         <Alert severity="info" onClose={() => setNotice(null)}>

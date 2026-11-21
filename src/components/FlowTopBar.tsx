@@ -11,13 +11,15 @@ interface FlowTopBarProps {
   title: string;
   /** Para onde o botão voltar leva. Sem isso, volta no histórico do navegador. */
   backHref?: string;
+  /** Ação do botão voltar (ex.: etapa anterior de um formulário). Tem prioridade sobre backHref. */
+  onBack?: () => void;
 }
 
 /**
  * Barra simples das telas de fluxo (nova viagem, busca, pagamento), como o "Tracking Shipment" da referência.
  * Fica parada no topo: só o conteúdo abaixo dela rola.
  */
-export default function FlowTopBar({ title, backHref }: FlowTopBarProps) {
+export default function FlowTopBar({ title, backHref, onBack }: FlowTopBarProps) {
   const router = useRouter();
   const scrolled = useScrollTrigger({ disableHysteresis: true, threshold: 4 });
 
@@ -45,7 +47,7 @@ export default function FlowTopBar({ title, backHref }: FlowTopBarProps) {
     >
       <IconButton
         aria-label="Voltar"
-        onClick={() => (backHref ? router.push(backHref) : router.back())}
+        onClick={() => (onBack ? onBack() : backHref ? router.push(backHref) : router.back())}
         sx={{ bgcolor: 'background.paper', boxShadow: 1, '&:hover': { bgcolor: 'background.paper' } }}
       >
         <ArrowLeft size={20} />
