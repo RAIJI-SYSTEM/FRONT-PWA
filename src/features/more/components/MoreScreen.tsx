@@ -1,5 +1,6 @@
 'use client';
 
+import { unregisterPush } from '@/features/push/push';
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
@@ -41,6 +42,7 @@ export default function MoreScreen({ avatarSrc }: { avatarSrc?: string }) {
 
   const leave = async () => {
     setLeaving(true);
+    await unregisterPush();
     await signOut();
     router.replace('/login');
   };

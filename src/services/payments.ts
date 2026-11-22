@@ -11,8 +11,12 @@ const paymentPath = (target: PaymentTarget) =>
     ? `/api/rides/${target.rideId}/requests/${target.requestId}/payment`
     : `/api/deliveries/${target.deliveryId}/payment`;
 
-/** Inicia (ou retoma) o pagamento: devolve o clientSecret para o formulário do Stripe */
-export const startPayment = (target: PaymentTarget) => backend<PaymentApi>(paymentPath(target), { method: 'POST' });
+/**
+ * Inicia (ou retoma) o pagamento: devolve o clientSecret para o formulário do Stripe.
+ * `coupon`: id do cupom para usar, 'none' para tirar; sem informar, mantém o que já estava.
+ */
+export const startPayment = (target: PaymentTarget, coupon?: string) =>
+  backend<PaymentApi>(paymentPath(target), { method: 'POST', ...(coupon ? { body: { coupon } } : {}) });
 
 /** Situação do pagamento (conferida no Stripe pelo backend) */
 export const getPayment = (target: PaymentTarget) => backend<PaymentApi>(paymentPath(target));

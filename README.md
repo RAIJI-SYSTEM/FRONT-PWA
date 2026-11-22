@@ -173,6 +173,23 @@ O chat é o serviço `raiji-chat` (pasta `../raiji-chat`), que sobe junto com o 
 - O passageiro fala com o motorista pelo botão **Mensagem** (na carona encontrada, em "Minha reserva", nas corridas/encomendas e na busca por código). O motorista fala com o passageiro ou remetente em **Gerenciar viagem** e em **Pedidos**.
 - **Código do motorista:** 8 números que aparecem em *Mais* (modo motorista). O passageiro digita em *Buscar → Por código* para ver as viagens dele e mandar mensagem.
 - Fotos, áudios e documentos vão **direto para o S3** com links assinados (nada fica no servidor do app) e ficam disponíveis por 24 h.
+- **Grupo da viagem:** criado sozinho quando o motorista aceita o primeiro passageiro (backend → RabbitMQ `raiji.rides` → chat). Entra cada passageiro aceito, sai quem cancela, e o grupo some 3 dias depois do fim da viagem. Botão **Grupo da viagem** em *Gerenciar viagem* e em *Minha reserva*.
+
+## Notificações push (Firebase)
+
+Mensagens novas do chat e todos os avisos do app (pedido aceito, pagamento recebido, repasse...) também chegam como notificação no celular, mesmo com o app fechado. Precisa de um projeto no Firebase:
+
+1. No [console do Firebase](https://console.firebase.google.com), crie um projeto e adicione um app **Android** com o pacote `com.raiji.app`.
+2. Baixe o `google-services.json` e coloque em `android/app/google-services.json` (fora do git). Compile o app de novo.
+3. Em *Configurações do projeto → Contas de serviço*, gere uma chave privada e salve como `../monolith/secrets/firebase-service-account.json` (a pasta não vai para o git). Suba o backend de novo.
+
+Sem os dois arquivos o push fica desligado e o app nem pede a permissão. No navegador não há push.
+
+## Recompensas e cupons
+
+Os cupons ficam no backend (tabela `coupons`). Cada conta ganha um cupom de boas-vindas de R$ 5 e, na missão de anúncios (*Mais → Recompensas*), um de R$ 15. Na tela de pagamento a pessoa escolhe o cupom; o desconto é da plataforma (o repasse do motorista usa o preço cheio) e a cobrança nunca fica abaixo de R$ 1. O cupom só conta como usado quando o pagamento é confirmado, e volta se houver estorno.
+
+Os anúncios usam os blocos de **teste** do Google enquanto `NEXT_PUBLIC_ADMOB_TESTING` não for `false`. Com `RAIJI_REWARDS_MOCK_ADS=true` (padrão no Docker) o próprio app avisa o backend que o anúncio terminou; em produção, desligue isso e configure o callback do AdMob (`/api/public/rewards/admob-ssv`), que precisa de uma URL pública com HTTPS.
 
 ## Arquivos (S3)
 

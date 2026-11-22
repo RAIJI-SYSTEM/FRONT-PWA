@@ -33,6 +33,7 @@ import {
 import { getRide } from '@/services/rides';
 import TripMap, { type TripPoint } from '@/features/map/components/TripMap';
 import MessageButton from '@/features/messages/components/MessageButton';
+import RideGroupButton from '@/features/messages/components/RideGroupButton';
 import { pointOf, rideEnd, rideStart, routeLine } from '@/features/map/tripPoints';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { formatDate, formatTime } from '@/utils/formatDate';
@@ -240,6 +241,7 @@ export default function RideManageScreen({ rideId }: { rideId: string }) {
               </Button>
             )}
           </Stack>
+          {confirmed.length > 0 && ride.status !== 'CANCELLED' && <RideGroupButton rideId={ride.id} sx={{ alignSelf: 'flex-start' }} />}
           {bookings.length === 0 && <Typography color="text.secondary">Nenhum pedido ainda.</Typography>}
           {[...pending, ...confirmed].map((b) => (
             <Paper key={b.id} variant="outlined" sx={{ p: 1.5, borderRadius: 3 }}>

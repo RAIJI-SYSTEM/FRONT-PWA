@@ -12,6 +12,7 @@ import type {
 import { ME_ID } from '@/types/message';
 import { routes } from '@/utils/routes';
 import { getSession } from './auth';
+import { ApiError } from './api';
 import { chat } from './chat';
 
 // --------------------------------------------------------------- formato do chat
@@ -176,4 +177,18 @@ export async function openDirectChat(target: ChatTarget) {
     },
   });
   return conversation._id;
+}
+
+/**
+ * Grupo da carona (motorista + passageiros aceitos), criado pelo sistema no primeiro aceite.
+ * Devolve o id da conversa, ou null se o grupo ainda não existe.
+ */
+export async function findRideGroup(rideId: string) {
+  try {
+    const conversation = await chat<ChatConversationApi>(`/conversations/by-ride/${encodeURIComponent(rideId)}`);
+    return conversation._id;
+  } catch (err) {
+    if (err instanceof ApiError && err.status === 404) return null;
+    throw err;
+  }
 }

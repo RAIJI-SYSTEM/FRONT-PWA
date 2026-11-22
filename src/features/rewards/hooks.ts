@@ -1,12 +1,11 @@
 'use client';
 
 import { useState } from 'react';
+import { getSession } from '@/services/auth';
 import { creditMockAd } from '@/services/rewards';
 import type { RewardedAdKind } from '@/types/rewards';
 import { isNativeApp, showNativeRewardedAd } from './ads/admob';
 
-// TODO: usar o ID do usuário logado (vai no callback SSV para creditar a conta certa)
-const CURRENT_USER_ID = 'usuario-demo';
 
 interface MockAdState {
   kind: RewardedAdKind;
@@ -22,8 +21,10 @@ export function useRewardedAd() {
 
   const show = async (kind: RewardedAdKind): Promise<{ rewarded: boolean; native: boolean }> => {
     if (isNativeApp()) {
-      // Os pontos chegam pelo callback SSV no servidor; a tela recarrega o progresso depois
-      const { rewarded } = await showNativeRewardedAd(kind, CURRENT_USER_ID);
+      // Em produção os pontos chegam pelo callback SSV do Google (user_id = a pessoa logada).
+      // No modo de testes do servidor, o app também avisa (o Google não alcança o PC na rede local).
+      const { rewarded } = await showNativeRewardedAd(kind, getSession()?.user.id ?? '');
+      if (rewarded) await creditMockAd(kind, crypto.randomUUID()).catch(() => null);
       return { rewarded, native: true };
     }
 

@@ -1,5 +1,6 @@
 'use client';
 
+import { unregisterPush } from '@/features/push/push';
 import { useState, type FormEvent } from 'react';
 import { useRouter } from 'next/navigation';
 import { Check, ExternalLink, LogOut, Phone } from 'lucide-react';
@@ -82,6 +83,7 @@ export default function ProfileScreen() {
 
   const leave = async () => {
     setLeaving(true);
+    await unregisterPush();
     await signOut();
     router.replace('/login');
   };

@@ -28,6 +28,9 @@ export interface PaymentApi {
   paidAt: string | null;
   paymentIntentId: string | null;
   clientSecret: string | null;
+  /** Desconto do cupom (o amountCents já vem com ele descontado) */
+  discountCents?: number;
+  couponId?: string | null;
 }
 
 export interface RideApi {

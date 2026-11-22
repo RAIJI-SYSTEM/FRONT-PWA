@@ -33,4 +33,6 @@ export interface AdChallenge {
 export interface RewardsState {
   coupons: Coupon[];
   challenge: AdChallenge;
+  /** Servidor aceita o "assisti" vindo do app (modo de testes, sem callback do AdMob) */
+  mockAds?: boolean;
 }

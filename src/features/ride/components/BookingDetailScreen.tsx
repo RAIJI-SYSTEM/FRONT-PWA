@@ -15,6 +15,7 @@ import { usePolling } from '@/hooks/usePolling';
 import { useQuery } from '@/hooks/useQuery';
 import TripMap from '@/features/map/components/TripMap';
 import MessageButton from '@/features/messages/components/MessageButton';
+import RideGroupButton from '@/features/messages/components/RideGroupButton';
 import { bookingPoints, pointOf, routeLine } from '@/features/map/tripPoints';
 import type { BaggageItemApi, MyBookingApi } from '@/services/backend/types';
 import { fromBrazilLocal, toCents } from '@/services/backend/client';
@@ -103,6 +104,9 @@ export default function BookingDetailScreen({ bookingId }: { bookingId: string }
           <Typography sx={{ fontWeight: 800 }}>{ride.driverName ?? 'Motorista'}</Typography>
           <Chip size="small" label={STATUS_LABEL[booking.status]} color={booking.status === 'CONFIRMED' ? 'success' : 'default'} />
         </Stack>
+        {(booking.status === 'CONFIRMED' || booking.status === 'COMPLETED') && ride.status !== 'CANCELLED' && (
+          <RideGroupButton rideId={ride.id} sx={{ mt: 1, mr: 1 }} />
+        )}
         {booking.status !== 'CANCELLED' && (
           <MessageButton
             label="Mensagem ao motorista"

@@ -55,7 +55,10 @@ export default function RewardsScreen() {
         updated = await getRewards();
       }
       setData(updated);
-      if (updated.challenge.completed && !rewards.challenge.completed) setWonCoupon(updated.coupons[0]);
+      if (updated.challenge.completed && !rewards.challenge.completed) {
+        const known = new Set(rewards.coupons.map((c) => c.id));
+        setWonCoupon(updated.coupons.find((c) => !known.has(c.id)) ?? null);
+      }
     } catch {
       setAdError('Nenhum anúncio disponível agora. Tente novamente em alguns minutos.');
     } finally {

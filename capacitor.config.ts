@@ -14,6 +14,10 @@ const config: CapacitorConfig = {
     androidScheme: 'http',
     cleartext: true,
   },
+  plugins: {
+    // Mostra a notificação mesmo com o app aberto
+    PushNotifications: { presentationOptions: ['badge', 'sound', 'alert'] },
+  },
 };
 
 export default config;

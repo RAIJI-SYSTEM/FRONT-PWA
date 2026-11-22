@@ -6,6 +6,7 @@ import CircularProgress from '@mui/material/CircularProgress';
 import Stack from '@mui/material/Stack';
 import { useHydrated } from '@/hooks/useHydrated';
 import { useSession } from '@/hooks/useSession';
+import PushRegistrar from '@/features/push/PushRegistrar';
 
 /** Caminho de onde a pessoa saiu, para voltar depois do login */
 export const loginPath = (returnTo: string) => `/login?voltar=${encodeURIComponent(returnTo)}`;
@@ -33,5 +34,10 @@ export default function AuthGate({ children }: { children: React.ReactNode }) {
       </Stack>
     );
   }
-  return children;
+  return (
+    <>
+      {children}
+      <PushRegistrar userId={session.user.id} />
+    </>
+  );
 }
