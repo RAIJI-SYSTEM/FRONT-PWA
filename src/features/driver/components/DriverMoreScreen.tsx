@@ -6,6 +6,7 @@ import Button from '@mui/material/Button';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import OptionList, { type MenuOption } from '@/features/more/components/OptionList';
+import DriverCodeCard from './DriverCodeCard';
 
 const DRIVER_OPTIONS: MenuOption[] = [
   { label: 'Perfil de motorista', description: 'CNH e veículos', href: '/motorista/perfil', icon: IdCard },
@@ -23,6 +24,7 @@ export default function DriverMoreScreen() {
       <Typography component="h1" variant="h5" sx={{ fontWeight: 800 }}>
         Mais
       </Typography>
+      <DriverCodeCard />
       <OptionList title="Motorista" options={DRIVER_OPTIONS} />
       <OptionList title="App" options={APP_OPTIONS} />
       <Button

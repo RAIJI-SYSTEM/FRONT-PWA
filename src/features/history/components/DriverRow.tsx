@@ -1,14 +1,15 @@
 'use client';
 
-import Link from 'next/link';
-import { MessageCircle, Star } from 'lucide-react';
+import { Star } from 'lucide-react';
 import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
 import Rating from '@mui/material/Rating';
 import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
+import MessageButton from '@/features/messages/components/MessageButton';
 import { participantColor } from '@/features/messages/participantColor';
+import type { ChatTarget } from '@/services/messages';
 import type { DriverRating, HistoryDriver } from '@/types/history';
 
 interface DriverRowProps {
@@ -16,13 +17,15 @@ interface DriverRowProps {
   rating?: DriverRating;
   /** Terminou (pode avaliar) */
   finished: boolean;
-  /** Em andamento/agendada (pode conversar) */
+  /** Pedido feito, agendada ou em andamento (pode conversar) */
   active: boolean;
+  /** Conversa com o motorista sobre esta corrida/encomenda */
+  chat?: ChatTarget;
   onRate: () => void;
 }
 
 /** Motorista + ação do momento: avaliar, ver a nota dada ou mandar mensagem */
-export default function DriverRow({ driver, rating, finished, active, onRate }: DriverRowProps) {
+export default function DriverRow({ driver, rating, finished, active, chat, onRate }: DriverRowProps) {
   return (
     <Stack direction="row" spacing={1.5} sx={{ alignItems: 'center' }}>
       <Avatar sx={{ width: 36, height: 36, bgcolor: participantColor(driver.id), color: '#fff', fontWeight: 700, fontSize: '0.95rem' }}>
@@ -62,17 +65,8 @@ export default function DriverRow({ driver, rating, finished, active, onRate }: 
         >
           Avaliar
         </Button>
-      ) : active ? (
-        <Button
-          size="small"
-          variant="outlined"
-          component={Link}
-          href="/mensagens"
-          startIcon={<MessageCircle size={16} />}
-          sx={{ flexShrink: 0, borderRadius: 999, textTransform: 'none', fontWeight: 600 }}
-        >
-          Mensagem
-        </Button>
+      ) : active && chat?.userId ? (
+        <MessageButton target={chat} />
       ) : null}
     </Stack>
   );

@@ -4,7 +4,7 @@ App de caronas e envio de encomendas: passageiro, motorista, mensagens, pagament
 
 Feito com **Next.js 16** (App Router), **React 19**, **MUI 9** e **Capacitor 8** (Android).
 
-> Por enquanto as rotas `/api` deste projeto são **mocks** (dados em memória, em `src/server/`). Elas são reiniciadas sempre que o servidor reinicia.
+> Os dados vêm do backend (`../monolith`): o Next só repassa as chamadas (`/api/raiji/*` para o monolito, `/api/chat/*` para o chat). Ainda são simulados em memória (`src/server/`) só as recompensas e as preferências de notificação.
 
 ---
 
@@ -124,7 +124,7 @@ Teste no **navegador do celular**: `http://IP-DO-PC:3000/homepage` precisa abrir
 | Você mudou… | O que fazer |
 |---|---|
 | Telas, componentes, estilos (`src/app`, `src/features`, `src/components`…) | `npm run build:mobile` e **▶ Run** de novo |
-| Só as rotas `/api` ou os mocks (`src/app/api`, `src/server`) | Nada: o `dev:lan` recarrega sozinho. Não precisa reinstalar o app |
+| Só as rotas `/api` (`src/app/api`, `src/server`) | Nada: o `dev:lan` recarrega sozinho. Não precisa reinstalar o app |
 | O `.env.local` (chaves, `MOBILE_API_URL`…) | `npm run build:mobile` e **▶ Run** (as variáveis `NEXT_PUBLIC_` ficam gravadas no build) |
 | O IP do PC (trocou de rede) | Atualize `MOBILE_API_URL` (e `NEXT_PUBLIC_KEYCLOAK_URL`), depois `npm run build:mobile` e **▶ Run** |
 | Instalou um plugin do Capacitor ou mexeu em `android/` | `npm run build:mobile` e **▶ Run** |
@@ -144,7 +144,7 @@ docker compose up --build -d
 - **No app**, o login abre numa aba do Chrome por cima do app e volta para o app pelo link `com.raiji.app://auth/callback`. Os dois endereços já estão liberados no `raiji-realm.json`.
 - No celular, `NEXT_PUBLIC_KEYCLOAK_URL` precisa usar o **IP do PC** (`http://192.168.0.10:8000`), não `localhost`.
 
-O resto do app funciona com os mocks mesmo sem o backend rodando.
+Sem o backend rodando, o app abre, mas as telas mostram erro ao carregar os dados.
 
 ---
 
@@ -165,6 +165,21 @@ Quem cobra e confirma é o **backend** (monolith): ele cria a cobrança no Strip
   ```
 
 ---
+
+## Mensagens (chat)
+
+O chat é o serviço `raiji-chat` (pasta `../raiji-chat`), que sobe junto com o backend (`docker compose --profile chat up -d`).
+
+- O passageiro fala com o motorista pelo botão **Mensagem** (na carona encontrada, em "Minha reserva", nas corridas/encomendas e na busca por código). O motorista fala com o passageiro ou remetente em **Gerenciar viagem** e em **Pedidos**.
+- **Código do motorista:** 8 números que aparecem em *Mais* (modo motorista). O passageiro digita em *Buscar → Por código* para ver as viagens dele e mandar mensagem.
+- Fotos, áudios e documentos vão **direto para o S3** com links assinados (nada fica no servidor do app) e ficam disponíveis por 24 h.
+
+## Arquivos (S3)
+
+A mídia do chat e a foto da CNH (temporária, apagada depois da verificação) ficam num armazenamento S3:
+
+- **Padrão (local):** RustFS, um S3 que roda no Docker do backend. Não precisa configurar nada.
+- **AWS:** veja `../monolith/docker-compose.s3.yml`. Em resumo: crie um usuário IAM com acesso aos dois buckets, preencha as variáveis `AWS_S3_*`/`S3_*_BUCKET` e `COMPOSE_FILE` no `monolith/.env`, rode `./scripts/s3-aws-setup.sh` e suba o backend de novo.
 
 ## Problemas comuns
 
@@ -199,11 +214,11 @@ Quem cobra e confirma é o **backend** (monolith): ele cria a cobrança no Strip
 ## Para quem for mexer no código
 
 - **Estrutura:**
-  - `src/app` tem as rotas e páginas: `(main)` passageiro, `(driver)` motorista, `(flow)` telas de fluxo, `(auth)` login, `api` mocks.
+  - `src/app` tem as rotas e páginas: `(main)` passageiro, `(driver)` motorista, `(flow)` telas de fluxo, `(auth)` login, `api` o BFF (repasse ao backend e ao chat).
   - `src/features` tem as telas e os componentes por assunto.
   - `src/components` tem os componentes compartilhados.
   - `src/services` tem as chamadas às APIs.
-  - `src/server` tem os mocks (só servidor).
+  - `src/server` tem o código só de servidor (repasse ao Kong e os mocks que restam).
 - **O app é uma exportação estática.** Por isso:
   - **Não use rotas dinâmicas `[id]`.** Use query string (`/mensagens/conversa?id=...`) e monte os links com `src/utils/routes.ts`.
   - **Páginas não podem ler dados no servidor** (`searchParams`, `cookies`, `redirect`, `src/server/*`). Leia a URL no cliente com `WithSearchParams` e redirecione com o componente `Redirect`.

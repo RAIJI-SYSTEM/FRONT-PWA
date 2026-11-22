@@ -141,8 +141,8 @@ export default function CitiesTab() {
             {trips.length} viage{trips.length === 1 ? 'm' : 'ns'} de {submitted.from} para {submitted.to}
           </Typography>
           <Stack spacing={1.5}>
-            {trips.map((trip) => (
-              <TripCard key={trip.id} trip={trip} />
+            {trips.map((ride) => (
+              <TripCard key={ride.id} ride={ride} />
             ))}
           </Stack>
         </ResultState>

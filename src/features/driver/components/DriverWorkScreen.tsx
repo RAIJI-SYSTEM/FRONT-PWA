@@ -2,9 +2,8 @@
 
 import { useCallback, useState } from 'react';
 import dynamic from 'next/dynamic';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { Car, Inbox, MessageCircle, Package, Star } from 'lucide-react';
+import { Car, Inbox, Package, Star } from 'lucide-react';
 import Alert from '@mui/material/Alert';
 import Avatar from '@mui/material/Avatar';
 import Box from '@mui/material/Box';
@@ -19,6 +18,7 @@ import Typography from '@mui/material/Typography';
 import StatusScreen from '@/components/StatusScreen';
 import HistoryCard from '@/features/history/components/HistoryCard';
 import HistoryList from '@/features/history/components/HistoryList';
+import MessageButton from '@/features/messages/components/MessageButton';
 import { participantColor } from '@/features/messages/participantColor';
 import FilterChips from '@/features/search/components/FilterChips';
 import { usePolling } from '@/hooks/usePolling';
@@ -263,17 +263,23 @@ export default function DriverWorkScreen({ initialKind, initialTab }: { initialK
                       <Button size="small" variant="contained" startIcon={<Star size={16} />} onClick={() => setRating(job)} sx={{ borderRadius: 999, textTransform: 'none', fontWeight: 600 }}>
                         Avaliar
                       </Button>
-                    ) : isActive(job) ? (
-                      <Button
-                        size="small"
-                        variant="outlined"
-                        component={Link}
-                        href="/motorista/mensagens"
-                        startIcon={<MessageCircle size={16} />}
-                        sx={{ borderRadius: 999, textTransform: 'none', fontWeight: 600 }}
-                      >
-                        Mensagem
-                      </Button>
+                    ) : isActive(job) && job.rideId ? (
+                      <MessageButton
+                        target={{
+                          userId: job.customerId,
+                          name: job.customerName,
+                          role: 'passenger',
+                          myRole: 'driver',
+                          context: {
+                            kind: job.kind,
+                            refId: job.rideId,
+                            subId: job.id.split(':')[2],
+                            label: job.kind === 'ride' ? 'Carona' : 'Encomenda',
+                            origin: job.origin,
+                            destination: job.destination,
+                          },
+                        }}
+                      />
                     ) : null}
                   </Stack>
                 }

@@ -1,6 +1,6 @@
 import { ApiError } from './api';
 import { backend, fromBrazilLocal, toBrazilLocal, toCents } from './backend/client';
-import type { RideSearchResultApi } from './backend/types';
+import type { RideApi, RideSearchResultApi } from './backend/types';
 import type { Place } from '@/types/place';
 import type { RideOffer, RideSearch, RideSearchRequest } from '@/types/ride';
 
@@ -121,3 +121,52 @@ export async function cancelRideSearch(id: string): Promise<RideSearch> {
   saveAll(all);
   return stored.search;
 }
+
+/**
+ * Pedido de vaga numa carona achada fora da busca pelo caminho (código do motorista, viagens
+ * entre cidades): a viagem inteira, pelo preço cheio. Devolve o link da tela de pedido.
+ */
+export function prepareDirectRequest(ride: RideApi): string {
+  const point = (lat: number | null, lng: number | null, name: string, address: string | null, city: string, state: string): Place => ({
+    id: `${ride.id}:${name}`,
+    name,
+    address: address ?? `${city}/${state}`,
+    city,
+    state,
+    coordinates: [lng ?? 0, lat ?? 0],
+  });
+  const origin = point(ride.originLatitude, ride.originLongitude, ride.originCity, ride.originAddress, ride.originCity, ride.originState);
+  const destination = point(
+    ride.destinationLatitude,
+    ride.destinationLongitude,
+    ride.destinationCity,
+    ride.destinationAddress,
+    ride.destinationCity,
+    ride.destinationState,
+  );
+  const result: RideSearchResultApi = {
+    ride,
+    pickupDistanceMeters: 0,
+    dropoffDistanceMeters: 0,
+    routeFraction: 1,
+    fullRoute: true,
+    suggestedPrice: ride.pricePerPassenger,
+    vehicle: null,
+    suggestedPackagePrice: ride.pricePerPackage,
+  };
+  const search: RideSearch = {
+    id: crypto.randomUUID(),
+    origin,
+    destination,
+    departure: { type: 'scheduled', at: fromBrazilLocal(ride.departureDate) },
+    status: 'results',
+    intermunicipal: ride.originCity !== ride.destinationCity,
+    offers: [toOffer(result)],
+    createdAt: new Date().toISOString(),
+  };
+  const all = loadAll();
+  all[search.id] = { search, results: [result] };
+  saveAll(all);
+  return `/viagem/pedido?busca=${encodeURIComponent(search.id)}&carona=${encodeURIComponent(ride.id)}`;
+}
+

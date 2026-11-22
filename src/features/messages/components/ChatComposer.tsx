@@ -42,6 +42,8 @@ interface Draft {
 }
 
 interface ChatComposerProps {
+  /** Conversa onde os arquivos são anexados (o envio vai direto ao S3) */
+  conversationId: string;
   placeholder: string;
   quickReplies?: string[];
   onSend: (message: OutgoingMessage) => void;
@@ -59,7 +61,7 @@ const roundButton = {
 
 let draftSeq = 0;
 
-export default function ChatComposer({ placeholder, quickReplies, onSend }: ChatComposerProps) {
+export default function ChatComposer({ conversationId, placeholder, quickReplies, onSend }: ChatComposerProps) {
   const [text, setText] = useState('');
   const [drafts, setDrafts] = useState<Draft[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -73,7 +75,7 @@ export default function ChatComposer({ placeholder, quickReplies, onSend }: Chat
     if (!recording) return;
     setSendingVoice(true);
     try {
-      const attachment = await uploadFile(recording.file, { durationSeconds: recording.durationSeconds });
+      const attachment = await uploadFile(conversationId, recording.file, { durationSeconds: recording.durationSeconds });
       onSend({ text: '', attachments: [attachment] });
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Não foi possível enviar o áudio.');
@@ -122,7 +124,7 @@ export default function ChatComposer({ placeholder, quickReplies, onSend }: Chat
         status: 'uploading',
       };
       setDrafts((prev) => [...prev, draft]);
-      uploadFile(file)
+      uploadFile(conversationId, file)
         .then((attachment) => updateDraft(draft.key, { status: 'ready', attachment }))
         .catch(() => updateDraft(draft.key, { status: 'error' }));
     }

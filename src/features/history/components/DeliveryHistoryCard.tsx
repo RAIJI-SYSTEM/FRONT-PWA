@@ -69,7 +69,25 @@ function DeliveryHistoryCard({ delivery, onRate }: DeliveryHistoryCardProps) {
           driver={delivery.driver}
           rating={delivery.rating}
           finished={delivery.status === 'delivered'}
-          active={delivery.status === 'awaiting_pickup' || delivery.status === 'in_transit'}
+          active={delivery.status === 'requested' || delivery.status === 'awaiting_pickup' || delivery.status === 'in_transit'}
+          chat={
+            delivery.rideId
+              ? {
+                  userId: delivery.driver.id,
+                  name: delivery.driver.name,
+                  role: 'driver',
+                  myRole: delivery.companyId ? 'company' : 'passenger',
+                  context: {
+                    kind: 'delivery',
+                    refId: delivery.rideId,
+                    subId: delivery.id,
+                    label: 'Encomenda',
+                    origin: delivery.origin,
+                    destination: delivery.destination,
+                  },
+                }
+              : undefined
+          }
           onRate={() => onRate(delivery)}
         />
       }

@@ -81,7 +81,18 @@ function RideHistoryCard({ ride, onRate }: RideHistoryCardProps) {
           driver={ride.driver}
           rating={ride.rating}
           finished={ride.status === 'completed'}
-          active={ride.status === 'scheduled' || ride.status === 'in_progress'}
+          active={ride.status === 'requested' || ride.status === 'scheduled' || ride.status === 'in_progress'}
+          chat={
+            ride.rideId
+              ? {
+                  userId: ride.driver.id,
+                  name: ride.driver.name,
+                  role: 'driver',
+                  myRole: 'passenger',
+                  context: { kind: 'ride', refId: ride.rideId, subId: ride.bookingId, label: 'Carona', origin: ride.origin, destination: ride.destination },
+                }
+              : undefined
+          }
           onRate={() => onRate(ride)}
         />
       }

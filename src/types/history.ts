@@ -66,6 +66,8 @@ export interface DeliveryHistoryItem {
   /** Palavra-chave que o destinatário diz ao motorista na entrega */
   keyword?: string | null;
   companyId?: string | null;
+  /** Carona que leva a encomenda */
+  rideId?: string;
   /** Pago depois do aceite do motorista (situação conferida pelo backend no Stripe) */
   paymentStatus: PaymentStatusApi;
 }

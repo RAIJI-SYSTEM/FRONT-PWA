@@ -1,5 +1,7 @@
+import { Clock } from 'lucide-react';
 import Box from '@mui/material/Box';
 import Stack from '@mui/material/Stack';
+import Typography from '@mui/material/Typography';
 import type { Attachment } from '@/types/message';
 import AudioAttachment from './AudioAttachment';
 import DocumentAttachment from './DocumentAttachment';
@@ -7,8 +9,10 @@ import ImageAttachment from './ImageAttachment';
 
 /** Anexos dentro do balão: fotos em grade, depois documentos e áudios */
 export default function MessageAttachments({ attachments, mine }: { attachments: Attachment[]; mine: boolean }) {
-  const images = attachments.filter((a) => a.type === 'image');
-  const others = attachments.filter((a) => a.type !== 'image');
+  const available = attachments.filter((a) => !a.expired && a.url);
+  const expired = attachments.length - available.length;
+  const images = available.filter((a) => a.type === 'image');
+  const others = available.filter((a) => a.type !== 'image');
 
   return (
     <Stack spacing={0.75}>
@@ -32,6 +36,14 @@ export default function MessageAttachments({ attachments, mine }: { attachments:
         ) : (
           <DocumentAttachment key={attachment.id} attachment={attachment} mine={mine} />
         ),
+      )}
+      {expired > 0 && (
+        <Stack direction="row" spacing={0.75} sx={{ alignItems: 'center', opacity: 0.75 }}>
+          <Clock size={14} />
+          <Typography variant="caption">
+            {expired === 1 ? 'Arquivo expirado' : `${expired} arquivos expirados`} (ficam disponíveis por 24 h)
+          </Typography>
+        </Stack>
       )}
     </Stack>
   );

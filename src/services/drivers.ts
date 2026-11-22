@@ -1,17 +1,41 @@
-import type { DriverProfile, DriverService, PersonType, PublicTrip } from '@/types/drivers';
-import { apiFetch } from './api';
+import { backend, fromBrazilLocal, toBrazilLocal } from './backend/client';
+import type { RideApi } from './backend/types';
 
-export const listDriversInCity = (city: string, filters: { personType?: PersonType; service?: DriverService } = {}) => {
-  const params = new URLSearchParams({ cidade: city });
-  if (filters.personType) params.set('tipo', filters.personType);
-  if (filters.service) params.set('servico', filters.service);
-  return apiFetch<DriverProfile[]>(`/api/drivers?${params}`);
-};
+/** Viagens publicadas que ainda aceitam pedidos (públicas, futuras, com reservas abertas) */
+const isOpen = (ride: RideApi) =>
+  ride.visibility === 'PUBLIC' && !ride.bookingsClosed && Date.parse(fromBrazilLocal(ride.departureDate)) > Date.now();
 
-export const findDriverByCode = (code: string) => apiFetch<DriverProfile>(`/api/drivers/code/${code}`);
+/**
+ * Viagens publicadas saindo de uma cidade (e indo para outra, se informada), opcionalmente num dia
+ * ("2026-11-21"). Busca pelo nome da cidade no backend.
+ */
+export async function searchTrips(from: string, to?: string, date?: string) {
+  const start = date ? new Date(`${date}T00:00:00`) : new Date();
+  const end = date ? new Date(`${date}T23:59:59`) : undefined;
+  const page = await backend<{ content: RideApi[] }>('/api/rides', {
+    query: {
+      originCity: from,
+      destinationCity: to || undefined,
+      departureFrom: toBrazilLocal(start),
+      departureTo: end ? toBrazilLocal(end) : undefined,
+      size: 50,
+    },
+  });
+  return page.content.filter(isOpen);
+}
 
-export const searchTrips = (from: string, to: string, date?: string) => {
-  const params = new URLSearchParams({ de: from, para: to });
-  if (date) params.set('data', date);
-  return apiFetch<PublicTrip[]>(`/api/trips?${params}`);
-};
+export interface DriverByCode {
+  driverSub: string;
+  driverName: string | null;
+  code: string;
+  rides: RideApi[];
+}
+
+/** Motorista pelo código de 8 dígitos, com as próximas viagens públicas dele */
+export async function findDriverByCode(code: string): Promise<DriverByCode> {
+  const found = await backend<DriverByCode>(`/api/rides/drivers/by-code/${code}`);
+  return { ...found, rides: found.rides.filter(isOpen) };
+}
+
+/** Código do próprio motorista, para divulgar aos passageiros */
+export const getMyDriverCode = () => backend<{ code: string }>('/api/rides/drivers/me/code');

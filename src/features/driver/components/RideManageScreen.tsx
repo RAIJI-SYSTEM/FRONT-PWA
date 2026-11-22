@@ -32,6 +32,7 @@ import {
 } from '@/services/driverMode';
 import { getRide } from '@/services/rides';
 import TripMap, { type TripPoint } from '@/features/map/components/TripMap';
+import MessageButton from '@/features/messages/components/MessageButton';
 import { pointOf, rideEnd, rideStart, routeLine } from '@/features/map/tripPoints';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { formatDate, formatTime } from '@/utils/formatDate';
@@ -125,6 +126,8 @@ export default function RideManageScreen({ rideId }: { rideId: string }) {
         return pickup ? [{ at: pickup, label: `Embarque: ${firstName(b.passengerName)}`, kind: 'pickup' as const }] : [];
       }),
   ];
+
+  const rideRoute = { origin: `${ride.originCity}/${ride.originState}`, destination: `${ride.destinationCity}/${ride.destinationState}` };
 
   const decide = (b: BookingApi, accept: boolean) =>
     run(
@@ -263,11 +266,21 @@ export default function RideManageScreen({ rideId }: { rideId: string }) {
                 </Stack>
               )}
               {b.status !== 'PENDING' && (
-                <Stack direction="row" spacing={1} sx={{ mt: 1, flexWrap: 'wrap' }}>
+                <Stack direction="row" spacing={1} sx={{ mt: 1, flexWrap: 'wrap', alignItems: 'center' }}>
                   <Chip size="small" color="success" label={b.status === 'COMPLETED' ? 'Concluído' : 'Confirmado'} />
                   <PaymentChip status={b.paymentStatus} />
                 </Stack>
               )}
+              <MessageButton
+                sx={{ mt: 1 }}
+                target={{
+                  userId: b.passengerSub,
+                  name: b.passengerName,
+                  role: 'passenger',
+                  myRole: 'driver',
+                  context: { kind: 'ride', refId: ride.id, subId: b.id, label: 'Carona', ...rideRoute },
+                }}
+              />
               {b.pendingBaggage.length > 0 && planned && (
                 <Alert
                   severity="info"
@@ -315,9 +328,23 @@ export default function RideManageScreen({ rideId }: { rideId: string }) {
                   {d.status !== 'PENDING' && d.status !== 'CANCELLED' && <PaymentChip status={d.paymentStatus} />}
                 </Stack>
               </Stack>
-              <Typography variant="body2" sx={{ mt: 0.5 }}>
-                Você recebe {d.driverReceives ? formatCurrency(toCents(d.driverReceives)) : 'R$ 0,00'}
-              </Typography>
+              <Stack direction="row" sx={{ mt: 0.5, alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
+                <Typography variant="body2">
+                  Você recebe {d.driverReceives ? formatCurrency(toCents(d.driverReceives)) : 'R$ 0,00'}
+                </Typography>
+                {d.status !== 'CANCELLED' && (
+                  <MessageButton
+                    label="Remetente"
+                    target={{
+                      userId: d.senderSub,
+                      name: d.senderName,
+                      role: d.companyId ? 'company' : 'passenger',
+                      myRole: 'driver',
+                      context: { kind: 'delivery', refId: ride.id, subId: d.id, label: 'Encomenda', ...rideRoute },
+                    }}
+                  />
+                )}
+              </Stack>
               {d.status === 'PENDING' && planned && (
                 <Stack direction="row" spacing={1} sx={{ mt: 1 }}>
                   <Button size="small" fullWidth variant="outlined" color="inherit" disabled={busy} onClick={() => decideDelivery(d, false)} sx={pill}>

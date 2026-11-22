@@ -72,6 +72,7 @@ export function toDeliveryHistory(d: DeliveryApi, rating?: DriverRating): Delive
     pickupCode: d.pickupCode,
     keyword: d.deliveryKeyword,
     companyId: d.companyId,
+    rideId: d.ride?.id,
     paymentStatus: d.paymentStatus,
   };
 }

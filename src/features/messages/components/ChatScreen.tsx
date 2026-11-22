@@ -258,6 +258,7 @@ export default function ChatScreen({ conversationId }: { conversationId: string 
             </Alert>
           )}
           <ChatComposer
+            conversationId={conversationId}
             placeholder={isGroup ? 'Mensagem para o grupo' : `Mensagem para ${conversation.title.split(' ')[0]}`}
             quickReplies={isGroup ? undefined : QUICK_REPLIES[conversation.mode]}
             onSend={send}

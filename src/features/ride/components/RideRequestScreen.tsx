@@ -18,6 +18,7 @@ import StatusScreen from '@/components/StatusScreen';
 import { useSession } from '@/hooks/useSession';
 import { useQuery } from '@/hooks/useQuery';
 import TripMap from '@/features/map/components/TripMap';
+import MessageButton from '@/features/messages/components/MessageButton';
 import { bookingPoints, routeLine } from '@/features/map/tripPoints';
 import type { BaggageItemApi } from '@/services/backend/types';
 import { fromBrazilLocal, toCents } from '@/services/backend/client';
@@ -111,7 +112,27 @@ export default function RideRequestScreen({ searchId, rideId }: { searchId: stri
   return (
     <Stack spacing={2.5}>
       <Paper variant="outlined" sx={{ p: 2, borderRadius: 3 }}>
-        <Typography sx={{ fontWeight: 800, fontSize: '1.1rem' }}>{ride.driverName ?? 'Motorista'}</Typography>
+        <Stack direction="row" sx={{ alignItems: 'center', justifyContent: 'space-between', gap: 1 }}>
+          <Typography sx={{ fontWeight: 800, fontSize: '1.1rem' }} noWrap>
+            {ride.driverName ?? 'Motorista'}
+          </Typography>
+          <MessageButton
+            label="Perguntar"
+            target={{
+              userId: ride.driverSub,
+              name: ride.driverName,
+              role: 'driver',
+              myRole: 'passenger',
+              context: {
+                kind: 'ride',
+                refId: ride.id,
+                label: 'Carona',
+                origin: `${ride.originCity}/${ride.originState}`,
+                destination: `${ride.destinationCity}/${ride.destinationState}`,
+              },
+            }}
+          />
+        </Stack>
         <Typography variant="body2" color="text.secondary">
           {ride.originCity} → {ride.destinationCity}
           {result.vehicle ? ` · ${result.vehicle}` : ''}

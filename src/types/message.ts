@@ -19,14 +19,17 @@ export interface Participant {
 
 export type AttachmentType = 'image' | 'document' | 'audio';
 
-/** Arquivo já enviado ao armazenamento (hoje simulado em /api/uploads) */
+/** Arquivo já enviado ao armazenamento (S3, pelo serviço de chat) */
 export interface Attachment {
   id: string;
   type: AttachmentType;
   name: string;
   mimeType: string;
   sizeBytes: number;
+  /** Link temporário de download (vazio quando o arquivo já expirou) */
   url: string;
+  /** A mídia do chat fica disponível por 24 h */
+  expired?: boolean;
   /** Mensagens de voz: duração em segundos (o navegador nem sempre consegue ler do arquivo) */
   durationSeconds?: number;
 }

@@ -14,6 +14,7 @@ import Typography from '@mui/material/Typography';
 import { usePolling } from '@/hooks/usePolling';
 import { useQuery } from '@/hooks/useQuery';
 import TripMap from '@/features/map/components/TripMap';
+import MessageButton from '@/features/messages/components/MessageButton';
 import { bookingPoints, pointOf, routeLine } from '@/features/map/tripPoints';
 import type { BaggageItemApi, MyBookingApi } from '@/services/backend/types';
 import { fromBrazilLocal, toCents } from '@/services/backend/client';
@@ -102,6 +103,26 @@ export default function BookingDetailScreen({ bookingId }: { bookingId: string }
           <Typography sx={{ fontWeight: 800 }}>{ride.driverName ?? 'Motorista'}</Typography>
           <Chip size="small" label={STATUS_LABEL[booking.status]} color={booking.status === 'CONFIRMED' ? 'success' : 'default'} />
         </Stack>
+        {booking.status !== 'CANCELLED' && (
+          <MessageButton
+            label="Mensagem ao motorista"
+            sx={{ mt: 1 }}
+            target={{
+              userId: ride.driverSub,
+              name: ride.driverName,
+              role: 'driver',
+              myRole: 'passenger',
+              context: {
+                kind: 'ride',
+                refId: ride.id,
+                subId: booking.id,
+                label: 'Carona',
+                origin: booking.pickupAddress ?? `${ride.originCity}/${ride.originState}`,
+                destination: booking.dropoffAddress ?? `${ride.destinationCity}/${ride.destinationState}`,
+              },
+            }}
+          />
+        )}
         <Typography variant="body2" color="text.secondary">
           {booking.pickupAddress ?? ride.originCity} → {booking.dropoffAddress ?? ride.destinationCity}
         </Typography>

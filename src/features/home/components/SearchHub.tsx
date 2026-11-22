@@ -7,7 +7,7 @@ import ButtonBase from '@mui/material/ButtonBase';
 import Typography from '@mui/material/Typography';
 
 /**
- * Barra de busca da página inicial: abre a busca de motoristas na região, por código
+ * Barra de busca da página inicial: abre a busca de viagens na região, de motorista por código
  * e de viagens entre cidades (as três abas ficam na tela /buscar).
  */
 export default function SearchHub() {
