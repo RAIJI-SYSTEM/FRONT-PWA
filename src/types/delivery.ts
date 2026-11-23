@@ -47,6 +47,8 @@ export interface Delivery {
   pickupCode?: string;
   /** Encomenda no backend (depois de pedir espaço numa carona) */
   backendId?: string;
+  /** Pedido no mural (quando publicada) */
+  boardId?: string;
   /** Carona escolhida */
   rideId?: string;
   /** Enviada em nome de uma empresa */

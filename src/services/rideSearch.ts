@@ -1,6 +1,7 @@
 import { ApiError } from './api';
 import { backend, fromBrazilLocal, toBrazilLocal, toCents } from './backend/client';
-import type { RideApi, RideSearchResultApi } from './backend/types';
+import type { BoardApi, RideApi, RideSearchResultApi } from './backend/types';
+import { publishOnBoard } from './board';
 import type { Place } from '@/types/place';
 import type { RideOffer, RideSearch, RideSearchRequest } from '@/types/ride';
 
@@ -98,6 +99,18 @@ export async function createRideSearch(request: RideSearchRequest): Promise<Ride
   all[search.id] = { search, results };
   saveAll(all);
   return search;
+}
+
+/** Publica a busca agendada no mural: os motoristas da região oferecem um valor */
+export async function publishRideSearch(id: string): Promise<BoardApi> {
+  const all = loadAll();
+  const { search } = all[id] ?? {};
+  if (!search) throw new ApiError('Esta busca expirou. Faça uma nova busca.', 404);
+  if (search.departure.type !== 'scheduled') throw new ApiError('O mural é para caronas agendadas.', 400);
+  const request = await publishOnBoard({ kind: 'SEAT', origin: search.origin, destination: search.destination, at: search.departure.at });
+  all[id].search = { ...search, status: 'published', boardId: request.id };
+  saveAll(all);
+  return request;
 }
 
 export async function getRideSearch(id: string): Promise<RideSearch> {

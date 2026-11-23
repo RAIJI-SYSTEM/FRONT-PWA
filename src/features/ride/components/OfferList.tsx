@@ -1,6 +1,6 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, type ReactNode } from 'react';
 import { ArrowRight } from 'lucide-react';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -17,10 +17,12 @@ interface OfferListProps {
   noun?: [singular: string, plural: string];
   /** Texto do botão (padrão: "Pedir vaga") */
   actionLabel?: string;
+  /** Conteúdo depois da lista (ex.: publicar no mural) */
+  footer?: ReactNode;
 }
 
 /** "Escolher o melhor trajeto": as ofertas já vêm ordenadas por preço */
-export default function OfferList({ offers, onContinue, noun = ['carona', 'caronas'], actionLabel = 'Pedir vaga' }: OfferListProps) {
+export default function OfferList({ offers, onContinue, noun = ['carona', 'caronas'], actionLabel = 'Pedir vaga', footer }: OfferListProps) {
   const [selectedId, setSelectedId] = useState(offers[0]?.id);
   const selected = offers.find((offer) => offer.id === selectedId);
   const fastestId = offers.reduce((a, b) => (b.etaMinutes < a.etaMinutes ? b : a), offers[0])?.id;
@@ -47,6 +49,8 @@ export default function OfferList({ offers, onContinue, noun = ['carona', 'caron
           />
         ))}
       </Stack>
+
+      {footer}
 
       <ActionBar>
         <Button

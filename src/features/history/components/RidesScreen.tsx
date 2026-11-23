@@ -11,6 +11,7 @@ import Stack from '@mui/material/Stack';
 import Typography from '@mui/material/Typography';
 import { listRides } from '@/services/history';
 import type { RideHistoryItem, RideHistoryStatus } from '@/types/history';
+import MyBoardSection from '@/features/board/components/MyBoardSection';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { preloadWhenIdle } from '@/utils/preload';
 import { inPeriod, matchesQuery, PERIODS, type Period } from '../filters';
@@ -119,6 +120,8 @@ export default function RidesScreen() {
           </Typography>
         </ButtonBase>
       )}
+
+      <MyBoardSection kind="SEAT" />
 
       <HistoryToolbar
         search={search}

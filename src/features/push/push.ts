@@ -6,11 +6,15 @@
  * - Ao tocar numa notificação: abre a conversa ou as notificações do modo certo.
  * - Ao sair da conta: remove o token, para o aparelho não receber avisos de outra pessoa.
  *
- * No navegador não faz nada. Sem o google-services.json no app, o registro falha e só vira log.
+ * No navegador não faz nada. Sem o google-services.json no build do app, também não: registrar
+ * sem ele derruba o app (erro nativo que o try/catch daqui não alcança).
  */
 import { Capacitor } from '@capacitor/core';
 import { backend } from '@/services/backend/client';
 import { routes } from '@/utils/routes';
+
+/** O build do app levou o google-services.json? (definido no next.config.ts) */
+const PUSH_AVAILABLE = process.env.NEXT_PUBLIC_PUSH_AVAILABLE === 'true';
 
 const CHANNEL_ID = 'raiji'; // o mesmo que o backend usa (FcmSender.ANDROID_CHANNEL)
 
@@ -62,7 +66,7 @@ async function setupListeners(navigate: Navigate) {
 
 /** Chamado com a pessoa logada (uma vez por conta, mesmo que a tela remonte) */
 export async function initPush(userId: string, navigate: Navigate) {
-  if (!Capacitor.isNativePlatform() || registeredFor === userId) return;
+  if (!PUSH_AVAILABLE || !Capacitor.isNativePlatform() || registeredFor === userId) return;
   registeredFor = userId;
   try {
     const { enabled } = await backend<{ enabled: boolean }>('/api/push/devices/status');

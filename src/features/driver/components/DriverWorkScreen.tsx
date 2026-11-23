@@ -20,6 +20,7 @@ import HistoryCard from '@/features/history/components/HistoryCard';
 import HistoryList from '@/features/history/components/HistoryList';
 import MessageButton from '@/features/messages/components/MessageButton';
 import { participantColor } from '@/features/messages/participantColor';
+import DriverBoard from '@/features/board/components/DriverBoard';
 import FilterChips from '@/features/search/components/FilterChips';
 import { usePolling } from '@/hooks/usePolling';
 import { listDriverJobs, listRegionRequests, rateCustomer, respondToRequest } from '@/services/driverMode';
@@ -33,7 +34,7 @@ import RequestCard from './RequestCard';
 const RatingDialog = dynamic(() => import('@/components/RatingDialog'));
 
 export type WorkKind = RegionRequest['kind'];
-export type WorkTab = 'regiao' | 'minhas';
+export type WorkTab = 'regiao' | 'pedidos' | 'minhas';
 /** Filtro por tipo: tudo, só caronas ou só encomendas (na URL: ?tipo=caronas|encomendas) */
 export type WorkFilter = WorkKind | 'all';
 
@@ -47,6 +48,9 @@ const PATH = '/motorista/pedidos';
 /** ?tipo= da URL → filtro */
 export const workFilterFromParam = (value: string | null): WorkFilter =>
   value === COPY.ride.param ? 'ride' : value === COPY.delivery.param ? 'delivery' : 'all';
+
+/** ?aba= da URL → aba (padrão: mural da região) */
+export const workTabFromParam = (value: string | null): WorkTab => (value === 'pedidos' || value === 'minhas' ? value : 'regiao');
 
 const STATUS: Record<DriverJobStatus, { label: string; color: 'default' | 'primary' | 'secondary' | 'success' }> = {
   accepted: { label: 'Aceita', color: 'primary' },
@@ -62,8 +66,8 @@ const loadOnce = () => false;
 const isActive = (j: DriverJob) => j.status === 'accepted' || j.status === 'in_progress';
 
 /**
- * Pedidos do motorista (caronas e encomendas nas viagens que ele publicou), em duas abas:
- * "Pedidos" (para aceitar/recusar) e "Minhas" (aceitas e concluídas, com avaliação).
+ * Pedidos do motorista, em três abas: "Na região" (mural de pedidos agendados, para oferecer valor),
+ * "Nas viagens" (pedidos nas viagens que ele publicou, para aceitar/recusar) e "Minhas" (aceitas e concluídas).
  */
 export default function DriverWorkScreen({ initialKind, initialTab }: { initialKind: WorkFilter; initialTab: WorkTab }) {
   const router = useRouter();
@@ -135,8 +139,8 @@ export default function DriverWorkScreen({ initialKind, initialTab }: { initialK
   const earned = jobs.filter((j) => j.status === 'completed').reduce((t, j) => t + j.earningsCents, 0);
   const potential = requests.reduce((t, r) => t + r.earningsCents, 0);
   // Contagem por tipo da aba atual, para os filtros
-  const source = tab === 'regiao' ? requestsQuery.data : jobsQuery.data;
-  const countOf = (k: WorkKind) => source?.filter((item) => item.kind === k).length ?? 0;
+  const source = tab === 'regiao' ? null : tab === 'pedidos' ? requestsQuery.data : jobsQuery.data;
+  const countOf = (k: WorkKind) => (source ? ` · ${source.filter((item) => item.kind === k).length}` : '');
   const noun = kind === 'all' ? { one: 'pedido', many: 'viagens e encomendas' } : { one: COPY[kind].noun, many: COPY[kind].plural };
 
   return (
@@ -147,6 +151,8 @@ export default function DriverWorkScreen({ initialKind, initialTab }: { initialK
         </Typography>
         <Typography variant="body2" color="text.secondary" aria-live="polite">
           {tab === 'regiao'
+            ? 'Caronas e encomendas agendadas perto de você ou no seu caminho'
+            : tab === 'pedidos'
             ? `${requests.length} ${requests.length === 1 ? 'pedido' : 'pedidos'} nas suas viagens${potential > 0 ? ` · até ${formatCurrency(potential)}` : ''}`
             : `${formatCurrency(earned)} em ${noun.many} concluídas`}
         </Typography>
@@ -165,11 +171,12 @@ export default function DriverWorkScreen({ initialKind, initialTab }: { initialK
           border: 1,
           borderColor: 'divider',
           '& .MuiTabs-indicator': { height: '100%', borderRadius: 999, zIndex: 0 },
-          '& .MuiTab-root': { minHeight: 36, zIndex: 1, textTransform: 'none', fontWeight: 600, borderRadius: 999 },
+          '& .MuiTab-root': { minHeight: 36, zIndex: 1, textTransform: 'none', fontWeight: 600, borderRadius: 999, px: 0.5 },
           '& .MuiTab-root.Mui-selected': { color: 'primary.contrastText' },
         }}
       >
-        <Tab value="regiao" label={`Pedidos (${requests.length})`} />
+        <Tab value="regiao" label="Na região" />
+        <Tab value="pedidos" label={`Nas viagens (${requests.length})`} />
         <Tab value="minhas" label={`Minhas (${jobs.length})`} />
       </Tabs>
 
@@ -177,8 +184,8 @@ export default function DriverWorkScreen({ initialKind, initialTab }: { initialK
         label="Tipo"
         options={[
           { value: 'all', label: 'Todos' },
-          { value: 'ride', label: `Caronas · ${countOf('ride')}` },
-          { value: 'delivery', label: `Encomendas · ${countOf('delivery')}` },
+          { value: 'ride', label: `Caronas${countOf('ride')}` },
+          { value: 'delivery', label: `Encomendas${countOf('delivery')}` },
         ]}
         value={kind}
         onChange={changeKind}
@@ -191,6 +198,8 @@ export default function DriverWorkScreen({ initialKind, initialTab }: { initialK
       )}
 
       {tab === 'regiao' ? (
+        <DriverBoard kind={kind === 'all' ? null : kind === 'ride' ? 'SEAT' : 'PACKAGE'} />
+      ) : tab === 'pedidos' ? (
         requests.length === 0 ? (
           <StatusScreen
             icon={Inbox}

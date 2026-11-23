@@ -3,22 +3,24 @@
 import { useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { CalendarCheck, SearchX } from 'lucide-react';
+import { SearchX } from 'lucide-react';
 import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
 import Stack from '@mui/material/Stack';
+import Redirect from '@/components/Redirect';
 import StatusScreen from '@/components/StatusScreen';
-import { cancelRideSearch } from '@/services/rideSearch';
+import PublishOnBoard from '@/features/board/components/PublishOnBoard';
+import { cancelRideSearch, publishRideSearch } from '@/services/rideSearch';
 import type { RideOffer } from '@/types/ride';
-import { formatDate, formatTime } from '@/utils/formatDate';
+import { routes } from '@/utils/routes';
 import { useRideSearch } from '../hooks/useRideSearch';
 import OfferList from './OfferList';
 import SearchingView from './SearchingView';
 
 const pillButton = { height: 52, borderRadius: 999, textTransform: 'none', fontWeight: 600 } as const;
 
-/** Acompanha a busca do início ao fim: espera → resultados / sem resultados / publicada no mural */
+/** Acompanha a busca do início ao fim: espera → resultados / sem resultados (a agendada pode ir para o mural) */
 export default function RideSearchScreen({ searchId }: { searchId: string }) {
   const router = useRouter();
   const { search, error, setSearch } = useRideSearch(searchId);
@@ -62,28 +64,16 @@ export default function RideSearchScreen({ searchId }: { searchId: string }) {
       );
 
     case 'results':
-      return <OfferList offers={search.offers} onContinue={handleContinue} />;
-
-    case 'published': {
-      const at = search.departure.type === 'scheduled' ? search.departure.at : search.createdAt;
       return (
-        <StatusScreen
-          icon={CalendarCheck}
-          title="Carona publicada no mural"
-          description={`Sua carona para ${formatDate(at)} às ${formatTime(at)} está visível para os motoristas. Avisaremos quando alguém aceitar.`}
-          actions={
-            <>
-              <Button component={Link} href="/homepage" variant="contained" sx={pillButton}>
-                Voltar ao início
-              </Button>
-              <Button onClick={handleCancel} disabled={canceling} color="inherit" sx={pillButton}>
-                Cancelar publicação
-              </Button>
-            </>
-          }
+        <OfferList
+          offers={search.offers}
+          onContinue={handleContinue}
+          footer={search.departure.type === 'scheduled' && <PublishOnBoard publish={() => publishRideSearch(searchId)} />}
         />
       );
-    }
+
+    case 'published':
+      return <Redirect to={search.boardId ? routes.board(search.boardId) : '/corridas'} />;
 
     case 'no_results':
     case 'canceled':

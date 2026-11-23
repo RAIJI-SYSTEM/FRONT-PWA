@@ -2,7 +2,8 @@ import type { Delivery, DeliveryDetailsRequest } from '@/types/delivery';
 import type { Place } from '@/types/place';
 import { ApiError } from './api';
 import { backend, toReais } from './backend/client';
-import type { DeliveryApi, RideSearchResultApi } from './backend/types';
+import type { BoardApi, DeliveryApi, RideSearchResultApi } from './backend/types';
+import { publishOnBoard } from './board';
 import { findRides, toOffer } from './rideSearch';
 
 /**
@@ -69,6 +70,24 @@ export async function submitDeliveryDetails(id: string, request: DeliveryDetails
     delivery: { ...stored.delivery, details: request.details, departure: request.departure, offers, status: offers.length ? 'results' : 'no_results' },
     results,
   });
+}
+
+/** Publica a encomenda agendada no mural: os motoristas da região oferecem um valor */
+export async function publishDelivery(id: string, companyId?: string | null): Promise<BoardApi> {
+  const stored = load(id);
+  const { delivery } = stored;
+  if (!delivery.details) throw new ApiError('Faltam os dados do pacote.', 400);
+  if (delivery.departure?.type !== 'scheduled') throw new ApiError('O mural é para coletas agendadas.', 400);
+  const request = await publishOnBoard({
+    kind: 'PACKAGE',
+    origin: delivery.origin,
+    destination: delivery.destination,
+    at: delivery.departure.at,
+    details: delivery.details,
+    companyId,
+  });
+  save({ ...stored, delivery: { ...delivery, status: 'published', boardId: request.id } });
+  return request;
 }
 
 /** Pede o espaço na carona escolhida. O motorista aceita ou recusa; os códigos já valem. */

@@ -1,3 +1,5 @@
+import { existsSync } from 'node:fs';
+import { join } from 'node:path';
 import type { NextConfig } from 'next';
 
 /**
@@ -11,6 +13,18 @@ if (isMobile && !process.env.MOBILE_API_URL) {
   throw new Error('Defina MOBILE_API_URL no .env.local (ex.: http://192.168.0.10:3000) antes de npm run build:mobile.');
 }
 
+/** Sem o google-services.json, registrar push derruba o app Android (erro nativo, fora do alcance do try/catch) */
+const hasFirebaseConfig = existsSync(join(process.cwd(), 'android/app/google-services.json'));
+
+/** Só desenvolvimento: deixa abrir o `dev:lan` no navegador pelo endereço da rede (MOBILE_API_URL) */
+function lanHosts() {
+  try {
+    return process.env.MOBILE_API_URL ? [new URL(process.env.MOBILE_API_URL).hostname] : [];
+  } catch {
+    return [];
+  }
+}
+
 const nextConfig: NextConfig = isMobile
   ? {
       output: 'export',
@@ -19,11 +33,14 @@ const nextConfig: NextConfig = isMobile
       pageExtensions: ['tsx'],
       images: { unoptimized: true },
       // Endereço do servidor das rotas /api visto pelo celular (só neste build; na web é a mesma origem)
-      env: { NEXT_PUBLIC_API_URL: process.env.MOBILE_API_URL },
+      env: {
+        NEXT_PUBLIC_API_URL: process.env.MOBILE_API_URL,
+        NEXT_PUBLIC_PUSH_AVAILABLE: hasFirebaseConfig ? 'true' : 'false',
+      },
       // As rotas /api ficam fora deste build e os tipos delas não são gerados; a checagem de
       // tipos completa é feita no build normal (npm run build) e no editor
       typescript: { ignoreBuildErrors: true },
     }
-  : {};
+  : { allowedDevOrigins: lanHosts() };
 
 export default nextConfig;

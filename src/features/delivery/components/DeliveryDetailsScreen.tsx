@@ -17,7 +17,8 @@ import Typography from '@mui/material/Typography';
 import ActionBar from '@/components/ActionBar';
 import RouteSummary from '@/features/activities/components/RouteSummary';
 import { useHasMoreBelow } from '@/hooks/useHasMoreBelow';
-import { getDelivery, submitDeliveryDetails } from '@/services/deliveries';
+import { listMyCompanies } from '@/services/companies';
+import { getDelivery, publishDelivery, submitDeliveryDetails } from '@/services/deliveries';
 import type { Delivery } from '@/types/delivery';
 import type { Departure } from '@/types/ride';
 import { routes } from '@/utils/routes';
@@ -116,7 +117,7 @@ export default function DeliveryDetailsScreen({ deliveryId }: { deliveryId: stri
     setApiError(null);
     setSubmitting(true);
     try {
-      await submitDeliveryDetails(deliveryId, {
+      const sent = await submitDeliveryDetails(deliveryId, {
         details: {
           size: form.size,
           description: form.description.trim(),
@@ -129,7 +130,9 @@ export default function DeliveryDetailsScreen({ deliveryId }: { deliveryId: stri
         },
         departure,
       });
-      router.push(routes.delivery(deliveryId));
+      // Agendada sem carona no caminho: direto para o mural (quem tem empresa antes escolhe em nome de quem envia)
+      const direct = departure.type === 'scheduled' && sent.status === 'no_results' && (await listMyCompanies().catch(() => [])).length === 0;
+      router.push(direct ? routes.board((await publishDelivery(deliveryId)).id) : routes.delivery(deliveryId));
     } catch (err) {
       setApiError(err instanceof Error ? err.message : 'Não foi possível enviar os dados.');
       setSubmitting(false);
@@ -265,7 +268,7 @@ export default function DeliveryDetailsScreen({ deliveryId }: { deliveryId: stri
               startIcon={submitting ? <CircularProgress size={20} color="inherit" /> : <Search size={20} />}
               sx={{ ...pillButton, boxShadow: 3 }}
             >
-              {form.mode === 'now' ? 'Procurar motorista' : 'Publicar no mural'}
+              {form.mode === 'now' ? 'Procurar motorista' : 'Procurar ou publicar'}
             </Button>
           ) : (
             <Button

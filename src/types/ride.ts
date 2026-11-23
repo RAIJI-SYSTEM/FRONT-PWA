@@ -4,7 +4,7 @@ export type Departure = { type: 'now' } | { type: 'scheduled'; at: string /* ISO
 
 /**
  * - searching: procurando motorista (o passageiro vê a tela de espera com anúncios)
- * - published: carona agendada publicada no mural, aguardando o horário
+ * - published: pedido agendado publicado no mural da região (boardId)
  * - results: motoristas encontrados, aguardando o passageiro escolher
  * - no_results: nenhuma rota/motorista disponível (busca encerrada)
  * - canceled: o passageiro desistiu
@@ -47,6 +47,8 @@ export interface RideSearchRequest {
 export interface RideSearch extends RideSearchRequest {
   id: string;
   status: RideSearchStatus;
+  /** Pedido no mural (quando publicado) */
+  boardId?: string;
   intermunicipal: boolean;
   offers: RideOffer[];
   createdAt: string;

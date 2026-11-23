@@ -1,14 +1,14 @@
 'use client';
 
 import WithSearchParams from '@/components/WithSearchParams';
-import DriverWorkScreen, { workFilterFromParam } from '@/features/driver/components/DriverWorkScreen';
+import DriverWorkScreen, { workFilterFromParam, workTabFromParam } from '@/features/driver/components/DriverWorkScreen';
 
-/** Pedidos de vaga e de encomenda nas viagens do motorista (?aba=minhas, ?tipo=caronas|encomendas) */
+/** Mural da região e pedidos nas viagens do motorista (?aba=regiao|pedidos|minhas, ?tipo=caronas|encomendas) */
 export default function DriverRequestsPage() {
   return (
     <WithSearchParams>
       {(params) => (
-        <DriverWorkScreen initialKind={workFilterFromParam(params.get('tipo'))} initialTab={params.get('aba') === 'minhas' ? 'minhas' : 'regiao'} />
+        <DriverWorkScreen initialKind={workFilterFromParam(params.get('tipo'))} initialTab={workTabFromParam(params.get('aba'))} />
       )}
     </WithSearchParams>
   );

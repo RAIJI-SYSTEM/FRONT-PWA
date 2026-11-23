@@ -31,6 +31,9 @@ const TITLES: Record<string, string> = {
   FREIGHT_OFFER: 'Nova oferta de frete',
   FREIGHT_OFFER_ACCEPTED: 'Sua oferta foi escolhida',
   FREIGHT_OFFER_DECLINED: 'Oferta não escolhida',
+  BOARD_OFFER: 'Nova oferta no mural',
+  BOARD_OFFER_ACCEPTED: 'Sua oferta foi escolhida',
+  BOARD_OFFER_DECLINED: 'Oferta não escolhida',
   RIDE_PAYMENT_RECEIVED: 'Vaga paga',
   DELIVERY_PAYMENT_RECEIVED: 'Encomenda paga',
   DRIVER_PAYOUT_SENT: 'Repasse enviado',
@@ -47,6 +50,10 @@ function toAppNotification(n: NotificationApi, mode: AppMode): AppNotification {
   if (kind.startsWith('FREIGHT')) {
     href = n.audience === 'COMPANY' && n.referenceId ? `/empresa/frete?id=${n.referenceId}` : mode === 'driver' ? '/motorista/fretes' : undefined;
     if (kind === 'FREIGHT_OFFER_ACCEPTED' || kind === 'FREIGHT_ACCEPTED') href = mode === 'driver' ? '/motorista/rotas' : href;
+  } else if (kind === 'BOARD_OFFER' && n.referenceId) {
+    href = `/mural?id=${n.referenceId}`;
+  } else if (kind === 'BOARD_OFFER_DECLINED') {
+    href = '/motorista/pedidos';
   } else if (kind === 'DRIVER_PAYOUT_SENT') {
     href = '/motorista/repasses';
   } else if (mode === 'driver') {

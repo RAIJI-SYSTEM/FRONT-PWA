@@ -12,7 +12,7 @@ export default function ScheduleStep({ form, errors, update }: StepProps) {
       onScheduledAtChange={(scheduledAt) => update({ scheduledAt })}
       error={errors.scheduledAt}
       dateLabel="Data e horário da coleta"
-      scheduledHint="Sua entrega fica no mural da região até um motorista aceitar."
+      scheduledHint="Se já houver carona nesse caminho, mostramos. Senão, o pedido vai para o mural e os motoristas da região mandam um valor."
     />
   );
 }

@@ -13,6 +13,7 @@ import { PACKAGE_SIZES } from '@/features/delivery/packageSizes';
 import { listDeliveries } from '@/services/history';
 import type { PackageSize } from '@/types/delivery';
 import type { DeliveryHistoryItem, DeliveryHistoryStatus } from '@/types/history';
+import MyBoardSection from '@/features/board/components/MyBoardSection';
 import { formatCurrency } from '@/utils/formatCurrency';
 import { preloadWhenIdle } from '@/utils/preload';
 import { inPeriod, matchesQuery, PERIODS, type Period } from '../filters';
@@ -114,6 +115,8 @@ export default function DeliveriesScreen() {
           </Typography>
         </ButtonBase>
       )}
+
+      <MyBoardSection kind="PACKAGE" />
 
       <HistoryToolbar
         search={search}

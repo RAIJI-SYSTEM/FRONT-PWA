@@ -22,6 +22,8 @@ export default function AudioAttachment({ attachment, mine }: { attachment: Atta
   // Áudios gravados no navegador (webm) costumam não informar a duração: usamos a enviada junto
   const [duration, setDuration] = useState(attachment.durationSeconds ?? 0);
   const [speedIndex, setSpeedIndex] = useState(0);
+  // Enquanto toca, fica com o mesmo link: trocar o src recarrega o áudio e ele para
+  const [playingUrl, setPlayingUrl] = useState<string | null>(null);
 
   const toggle = () => {
     const audio = audioRef.current;
@@ -40,12 +42,19 @@ export default function AudioAttachment({ attachment, mine }: { attachment: Atta
     <Stack direction="row" spacing={1} sx={{ alignItems: 'center', minWidth: { xs: 220, sm: 260 } }}>
       <audio
         ref={audioRef}
-        src={apiUrl(attachment.url)}
+        src={apiUrl(playingUrl ?? attachment.url)}
         preload="metadata"
-        onPlay={() => setPlaying(true)}
-        onPause={() => setPlaying(false)}
+        onPlay={() => {
+          setPlaying(true);
+          setPlayingUrl(attachment.url);
+        }}
+        onPause={() => {
+          setPlaying(false);
+          setPlayingUrl(null);
+        }}
         onEnded={() => {
           setPlaying(false);
+          setPlayingUrl(null);
           setCurrent(0);
         }}
         onTimeUpdate={(e) => setCurrent(e.currentTarget.currentTime)}

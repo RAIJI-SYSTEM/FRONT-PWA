@@ -27,7 +27,7 @@ export default function DepartureSelector({
   scheduledAt,
   onScheduledAtChange,
   error,
-  scheduledHint = 'Sua carona fica publicada no mural até um motorista aceitar.',
+  scheduledHint = 'Se já houver carona nesse caminho, mostramos. Senão, seu pedido vai para o mural e os motoristas da região mandam um valor.',
   dateLabel = 'Data e horário da carona',
 }: DepartureSelectorProps) {
   return (

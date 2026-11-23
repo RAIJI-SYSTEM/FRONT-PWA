@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Car, ChevronRight, ListChecks, Package, Plus, Route, Wallet, type LucideIcon } from 'lucide-react';
+import { Car, ChevronRight, ListChecks, Megaphone, Package, Plus, Route, Wallet, type LucideIcon } from 'lucide-react';
 import Alert from '@mui/material/Alert';
 import Box from '@mui/material/Box';
 import Button from '@mui/material/Button';
@@ -91,12 +91,15 @@ export default function DriverHomeScreen() {
 
       <Box component="section" aria-labelledby="region-title">
         <Typography id="region-title" component="h2" variant="h6" sx={{ fontWeight: 700, mb: 1.25 }}>
-          Na sua região agora
+          Pedidos nas suas viagens
         </Typography>
         <Stack direction="row" spacing={1.5}>
-          <RegionShortcut href="/motorista/pedidos?tipo=caronas" icon={Car} count={requests.filter((r) => r.kind === 'ride').length} label="caronas disponíveis" />
-          <RegionShortcut href="/motorista/pedidos?tipo=encomendas" icon={Package} count={requests.filter((r) => r.kind === 'delivery').length} label="encomendas disponíveis" />
+          <RegionShortcut href="/motorista/pedidos?aba=pedidos&tipo=caronas" icon={Car} count={requests.filter((r) => r.kind === 'ride').length} label="pedidos de carona" />
+          <RegionShortcut href="/motorista/pedidos?aba=pedidos&tipo=encomendas" icon={Package} count={requests.filter((r) => r.kind === 'delivery').length} label="pedidos de encomenda" />
         </Stack>
+        <Button component={Link} href="/motorista/pedidos" fullWidth variant="outlined" startIcon={<Megaphone size={18} />} sx={{ mt: 1.5, height: 48, borderRadius: 999, textTransform: 'none', fontWeight: 600 }}>
+          Mural da região: pedidos agendados
+        </Button>
       </Box>
 
       {/* Rotas: publicar uma nova ou ver/alterar as que já foram publicadas */}

@@ -11,6 +11,7 @@ import type {
 } from '@/types/message';
 import { ME_ID } from '@/types/message';
 import { routes } from '@/utils/routes';
+import { stableLink } from '@/utils/stableLinks';
 import { getSession } from './auth';
 import { ApiError } from './api';
 import { chat } from './chat';
@@ -78,7 +79,7 @@ export const toAttachment = (a: ChatAttachmentApi): Attachment => ({
   name: a.name,
   mimeType: a.mimeType,
   sizeBytes: a.sizeBytes,
-  url: a.url ?? '',
+  url: a.url && !a.expired ? stableLink(a.id, a.url) : '',
   expired: a.expired || !a.url,
   ...(a.durationSeconds !== undefined ? { durationSeconds: a.durationSeconds } : {}),
 });

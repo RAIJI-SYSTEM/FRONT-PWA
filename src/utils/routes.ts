@@ -8,5 +8,7 @@ export const routes = {
   rideSearch: (id: string) => withId('/viagem/busca', id),
   conversation: (id: string) => withId('/mensagens/conversa', id),
   delivery: (id: string) => withId('/encomenda', id),
+  /** Meu pedido no mural da região */
+  board: (id: string) => withId('/mural', id),
   deliveryDetails: (id: string) => withId('/encomenda/produto', id),
 };

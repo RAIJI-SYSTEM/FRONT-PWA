@@ -337,3 +337,70 @@ export interface AcceptAllApi {
   skipped: { requestId: string; reason: string }[];
   availableSeats: number;
 }
+
+// ---------------------------------------------------------------- mural da região
+
+export type BoardKindApi = 'SEAT' | 'PACKAGE';
+export type BoardStatusApi = 'OPEN' | 'ACCEPTED' | 'CANCELLED' | 'EXPIRED';
+
+export interface BoardOfferApi {
+  id: string;
+  requestId: string;
+  driverSub: string;
+  driverName: string | null;
+  vehicle: string | null;
+  price: number;
+  /** O que o motorista recebe, já sem a comissão */
+  driverReceives: number;
+  message: string | null;
+  /** true = viagem nova, só para este pedido; false = numa carona que ele já publicou */
+  newRide: boolean;
+  rideId: string | null;
+  departureDate: string | null;
+  status: OfferStatus;
+  createdAt: string;
+}
+
+/** Para quem não é o dono, o local vem aproximado e sem endereço, e sem os dados de quem recebe. */
+export interface BoardApi {
+  id: string;
+  kind: BoardKindApi;
+  status: BoardStatusApi;
+  mine: boolean;
+  requesterName: string | null;
+  companyId: string | null;
+  companyName: string | null;
+  originCity: string;
+  originState: string;
+  originLatitude: number;
+  originLongitude: number;
+  originAddress: string | null;
+  destinationCity: string;
+  destinationState: string;
+  destinationLatitude: number;
+  destinationLongitude: number;
+  destinationAddress: string | null;
+  desiredAt: string;
+  tripDistanceMeters: number;
+  /** Distância do motorista até a saída */
+  distanceMeters: number | null;
+  /** Carona do motorista que passa pelo caminho */
+  matchingRide: { id: string; originCity: string; destinationCity: string; departureDate: string } | null;
+  notes: string | null;
+  size: PackageSizeApi | null;
+  description: string | null;
+  weightKg: number | null;
+  lengthCm: number | null;
+  widthCm: number | null;
+  heightCm: number | null;
+  fragile: boolean | null;
+  recipientName: string | null;
+  recipientPhone: string | null;
+  pendingOffers: number;
+  myOffer: BoardOfferApi | null;
+  rideId: string | null;
+  bookingId: string | null;
+  deliveryId: string | null;
+  createdAt: string;
+  closedAt: string | null;
+}

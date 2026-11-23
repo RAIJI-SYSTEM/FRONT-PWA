@@ -1,6 +1,7 @@
 import type { DepartureMode } from '@/features/ride/components/DepartureSelector';
 import type { PackageSize } from '@/types/delivery';
 import { MAX_WEIGHT_KG } from '@/features/delivery/packageSizes';
+import { BOARD_MIN_MINUTES } from '@/services/board';
 import { parseMoney } from '@/utils/money';
 
 export const parseWeight = (value: string) => Number(value.replace(',', '.'));
@@ -44,8 +45,6 @@ export const STEPS = [
 
 export type StepKey = (typeof STEPS)[number]['key'];
 
-const MIN_SCHEDULE_MINUTES = 30;
-
 export { parseMoney };
 
 /** Valida só os campos da etapa atual, para o usuário corrigir antes de avançar */
@@ -67,8 +66,8 @@ export function validateStep(step: StepKey, form: DetailsForm): DetailsErrors {
   if (step === 'schedule' && form.mode === 'scheduled') {
     const time = Date.parse(form.scheduledAt);
     if (Number.isNaN(time)) errors.scheduledAt = 'Escolha a data e o horário.';
-    else if (time < Date.now() + MIN_SCHEDULE_MINUTES * 60_000)
-      errors.scheduledAt = `Agende com pelo menos ${MIN_SCHEDULE_MINUTES} minutos de antecedência.`;
+    else if (time < Date.now() + BOARD_MIN_MINUTES * 60_000)
+      errors.scheduledAt = 'Agende com pelo menos 1 hora de antecedência. Para sair antes, escolha Agora.';
   }
   return errors;
 }

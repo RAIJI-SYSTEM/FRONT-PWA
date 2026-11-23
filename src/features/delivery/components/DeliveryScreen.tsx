@@ -3,7 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { CalendarCheck, Hourglass, KeyRound, PackageCheck, PackageSearch, SearchX } from 'lucide-react';
+import { Hourglass, KeyRound, Megaphone, PackageCheck, PackageSearch, SearchX } from 'lucide-react';
 import Alert from '@mui/material/Alert';
 import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
@@ -12,14 +12,15 @@ import Paper from '@mui/material/Paper';
 import TextField from '@mui/material/TextField';
 import Typography from '@mui/material/Typography';
 import Stack from '@mui/material/Stack';
+import Redirect from '@/components/Redirect';
 import StatusScreen from '@/components/StatusScreen';
+import PublishOnBoard from '@/features/board/components/PublishOnBoard';
 import OfferList from '@/features/ride/components/OfferList';
 import SearchingView from '@/features/ride/components/SearchingView';
 import type { CompanyApi } from '@/services/backend/types';
 import { listMyCompanies } from '@/services/companies';
-import { cancelDelivery, requestDeliverySpace } from '@/services/deliveries';
+import { cancelDelivery, publishDelivery, requestDeliverySpace } from '@/services/deliveries';
 import type { RideOffer } from '@/types/ride';
-import { formatDate, formatTime } from '@/utils/formatDate';
 import { useDelivery } from '../hooks/useDelivery';
 import DeliveryKeyword from './DeliveryKeyword';
 import { routes } from '@/utils/routes';
@@ -54,6 +55,17 @@ export default function DeliveryScreen({ deliveryId }: { deliveryId: string }) {
     }
   };
 
+  const handlePublish = async () => {
+    setRequestError(null);
+    setRequesting(true);
+    try {
+      router.push(routes.board((await publishDelivery(deliveryId, senderCompany || null)).id));
+    } catch (err) {
+      setRequestError(err instanceof Error ? err.message : 'Não foi possível publicar.');
+      setRequesting(false);
+    }
+  };
+
   const handleContinue = async (offer: RideOffer) => {
     setRequestError(null);
     setRequesting(true);
@@ -77,6 +89,18 @@ export default function DeliveryScreen({ deliveryId }: { deliveryId: string }) {
       </Stack>
     );
   }
+
+  const scheduled = delivery.departure?.type === 'scheduled';
+  const companySelect = companies.length > 0 && (
+    <TextField select label="Enviar como" value={senderCompany} onChange={(e) => setSenderCompany(e.target.value)}>
+      <MenuItem value="">Eu (pessoa física)</MenuItem>
+      {companies.map((c) => (
+        <MenuItem key={c.id} value={c.id}>
+          {c.displayName} · {c.cnpjFormatted}
+        </MenuItem>
+      ))}
+    </TextField>
+  );
 
   switch (delivery.status) {
     case 'awaiting_details':
@@ -109,16 +133,7 @@ export default function DeliveryScreen({ deliveryId }: { deliveryId: string }) {
     case 'results':
       return (
         <Stack spacing={2}>
-          {companies.length > 0 && (
-            <TextField select label="Enviar como" value={senderCompany} onChange={(e) => setSenderCompany(e.target.value)}>
-              <MenuItem value="">Eu (pessoa física)</MenuItem>
-              {companies.map((c) => (
-                <MenuItem key={c.id} value={c.id}>
-                  {c.displayName} · {c.cnpjFormatted}
-                </MenuItem>
-              ))}
-            </TextField>
-          )}
+          {companySelect}
           {requestError && <Alert severity="error">{requestError}</Alert>}
           {requesting && <CircularProgress size={24} sx={{ alignSelf: 'center' }} />}
           <OfferList
@@ -126,6 +141,7 @@ export default function DeliveryScreen({ deliveryId }: { deliveryId: string }) {
             onContinue={requesting ? () => undefined : handleContinue}
             noun={['carona que leva encomendas', 'caronas que levam encomendas']}
             actionLabel="Pedir espaço nesta carona"
+            footer={scheduled && <PublishOnBoard publish={() => publishDelivery(deliveryId, senderCompany || null)} />}
           />
         </Stack>
       );
@@ -160,26 +176,8 @@ export default function DeliveryScreen({ deliveryId }: { deliveryId: string }) {
         </StatusScreen>
       );
 
-    case 'published': {
-      const at = delivery.departure?.type === 'scheduled' ? delivery.departure.at : delivery.createdAt;
-      return (
-        <StatusScreen
-          icon={CalendarCheck}
-          title="Publicada no mural da região"
-          description={`Sua coleta para ${formatDate(at)} às ${formatTime(at)} está visível para os motoristas da região. Avisaremos quando alguém aceitar.`}
-          actions={
-            <>
-              <Button component={Link} href="/homepage" variant="contained" sx={pillButton}>
-                Voltar ao início
-              </Button>
-              <Button onClick={handleCancel} disabled={canceling} color="inherit" sx={pillButton}>
-                Cancelar entrega
-              </Button>
-            </>
-          }
-        />
-      );
-    }
+    case 'published':
+      return <Redirect to={delivery.boardId ? routes.board(delivery.boardId) : '/encomendas'} />;
 
     case 'paid':
       return (
@@ -202,6 +200,28 @@ export default function DeliveryScreen({ deliveryId }: { deliveryId: string }) {
 
     case 'no_results':
     case 'canceled':
+      // Agendada sem carona no caminho: vai para o mural da região
+      if (delivery.status === 'no_results' && scheduled) {
+        return (
+          <StatusScreen
+            icon={Megaphone}
+            title="Publicar no mural da região"
+            description="Nenhuma carona publicada passa por esse caminho nesse horário. No mural, os motoristas da região veem o pedido e mandam um valor. Você escolhe."
+            actions={
+              <>
+                {companySelect}
+                {requestError && <Alert severity="error">{requestError}</Alert>}
+                <Button onClick={handlePublish} disabled={requesting} variant="contained" sx={pillButton}>
+                  {requesting ? 'Publicando…' : 'Publicar no mural'}
+                </Button>
+                <Button component={Link} href="/encomenda/nova" color="inherit" sx={pillButton}>
+                  Mudar o pedido
+                </Button>
+              </>
+            }
+          />
+        );
+      }
       return (
         <StatusScreen
           icon={SearchX}

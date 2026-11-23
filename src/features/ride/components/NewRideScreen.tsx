@@ -6,14 +6,12 @@ import { Search } from 'lucide-react';
 import Button from '@mui/material/Button';
 import CircularProgress from '@mui/material/CircularProgress';
 import RoutePicker from '@/features/map/components/RoutePicker';
-import { createRideSearch } from '@/services/rideSearch';
+import { BOARD_MIN_MINUTES } from '@/services/board';
+import { createRideSearch, publishRideSearch } from '@/services/rideSearch';
 import type { Place } from '@/types/place';
 import type { Departure } from '@/types/ride';
 import DepartureSelector, { type DepartureMode } from './DepartureSelector';
 import { routes } from '@/utils/routes';
-
-/** Antecedência mínima para agendar uma carona */
-const MIN_SCHEDULE_MINUTES = 15;
 
 interface NewRideScreenProps {
   initialMode?: DepartureMode;
@@ -33,8 +31,8 @@ export default function NewRideScreen({ initialMode = 'now' }: NewRideScreenProp
     if (mode === 'scheduled') {
       const time = Date.parse(scheduledAt);
       if (Number.isNaN(time)) return setScheduleError('Escolha a data e o horário.');
-      if (time < Date.now() + MIN_SCHEDULE_MINUTES * 60_000)
-        return setScheduleError(`Agende com pelo menos ${MIN_SCHEDULE_MINUTES} minutos de antecedência.`);
+      if (time < Date.now() + BOARD_MIN_MINUTES * 60_000)
+        return setScheduleError('Agende com pelo menos 1 hora de antecedência. Para sair antes, escolha Agora.');
       departure = { type: 'scheduled', at: new Date(time).toISOString() };
     }
     setScheduleError(undefined);
@@ -43,7 +41,9 @@ export default function NewRideScreen({ initialMode = 'now' }: NewRideScreenProp
     setSubmitting(true);
     try {
       const search = await createRideSearch({ origin, destination, departure });
-      router.push(routes.rideSearch(search.id));
+      // Agendada: sem carona publicada nesse caminho, o pedido vai direto para o mural da região
+      if (departure.type === 'scheduled' && search.status === 'no_results') router.push(routes.board((await publishRideSearch(search.id)).id));
+      else router.push(routes.rideSearch(search.id));
     } catch (error) {
       setApiError(error instanceof Error ? error.message : 'Não foi possível iniciar a busca.');
       setSubmitting(false);
@@ -72,7 +72,7 @@ export default function NewRideScreen({ initialMode = 'now' }: NewRideScreenProp
             startIcon={submitting ? <CircularProgress size={20} color="inherit" /> : <Search size={20} />}
             sx={{ height: 52, borderRadius: 999, fontSize: '1rem', fontWeight: 600, textTransform: 'none', boxShadow: 3 }}
           >
-            {mode === 'now' ? 'Procurar motorista' : 'Publicar carona'}
+            {mode === 'now' ? 'Procurar motorista' : 'Procurar ou publicar no mural'}
           </Button>
         </>
       )}
