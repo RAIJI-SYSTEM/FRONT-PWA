@@ -42,3 +42,11 @@ next-env.d.ts
 
 # modelo de variáveis de ambiente (sem segredos)
 !.env.example
+
+
+# --- Testes de carga (load-tests — Locust) ---
+.venv/
+users.csv
+reports/
+__pycache__/
+*.pyc
