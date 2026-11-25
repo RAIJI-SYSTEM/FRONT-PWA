@@ -1,0 +1,13 @@
+node_modules
+.next
+out
+build
+coverage
+android
+ios
+.git
+.github
+*.log
+*.txt
+npm-debug.log*
+.eslintcache
