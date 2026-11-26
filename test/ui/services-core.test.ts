@@ -30,7 +30,7 @@ describe("api", () => {
   });
 
   it("apiFetch envia JSON e devolve o corpo", async () => {
-    const fetchMock = vi.fn(async () => response({ ok: true }));
+    const fetchMock = vi.fn(async (_url: string, _init?: RequestInit) => response({ ok: true }));
     vi.stubGlobal("fetch", fetchMock);
 
     await expect(apiFetch<{ ok: boolean }>("/api/x", { method: "POST", body: "{}" })).resolves.toEqual({ ok: true });
@@ -65,7 +65,7 @@ describe("backend client", () => {
   });
 
   it("monta URL, query (com listas e nulos) e cabeçalhos", async () => {
-    const fetchMock = vi.fn(async () => response({ id: 1 }));
+    const fetchMock = vi.fn(async (_url: string, _init?: RequestInit) => response({ id: 1 }));
     vi.stubGlobal("fetch", fetchMock);
 
     await backend("/api/rides", {
@@ -87,7 +87,7 @@ describe("backend client", () => {
   });
 
   it("envia FormData sem Content-Type manual", async () => {
-    const fetchMock = vi.fn(async () => response({ id: 1 }));
+    const fetchMock = vi.fn(async (_url: string, _init?: RequestInit) => response({ id: 1 }));
     vi.stubGlobal("fetch", fetchMock);
     const form = new FormData();
     form.append("x", "1");
@@ -155,7 +155,7 @@ describe("chat client", () => {
   });
 
   it("chama /api/chat com o token", async () => {
-    const fetchMock = vi.fn(async () => response([{ id: "c1" }]));
+    const fetchMock = vi.fn(async (_url: string, _init?: RequestInit) => response([{ id: "c1" }]));
     vi.stubGlobal("fetch", fetchMock);
 
     await expect(chat("/conversations")).resolves.toEqual([{ id: "c1" }]);

@@ -186,7 +186,7 @@ describe("getConversation / sendMessage / openDirectChat / findRideGroup", () =>
     expect(st.chat).toHaveBeenCalledWith("/conversations/conv-1");
     expect(st.chat).toHaveBeenCalledWith("/conversations/conv-1/messages?limit=100");
     expect(conversationResult.unreadCount).toBe(0);
-    expect(conversationResult.messages[0]!.attachments[0]!.url).toBe("");
+    expect(conversationResult.messages[0]!.attachments![0]!.url).toBe("");
   });
 
   it("envia mensagem e converte a resposta", async () => {
@@ -240,7 +240,7 @@ describe("uploadFile", () => {
       attachment: attachment(),
       upload: { method: "POST", url: "https://s3.example/upload", fields: { key: "k", policy: "p" }, expiresInSeconds: 300 },
     });
-    const fetchMock = vi.fn(async () => ({ ok: true, status: 204 }));
+    const fetchMock = vi.fn(async (_url: string, _init?: RequestInit) => ({ ok: true, status: 204 }));
     vi.stubGlobal("fetch", fetchMock);
 
     const result = await uploadFile("conv-1", file, { durationSeconds: 3 });

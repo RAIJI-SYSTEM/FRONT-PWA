@@ -19,7 +19,7 @@ describe("gateway (BFF -> Kong)", () => {
   });
 
   it("repassa método, cabeçalhos permitidos, corpo e query", async () => {
-    const fetchMock = vi.fn(async () => new Response("ok", { status: 201, headers: { "content-type": "application/json", "x-ignorado": "1" } }));
+    const fetchMock = vi.fn(async (_url: string, _init?: RequestInit) => new Response("ok", { status: 201, headers: { "content-type": "application/json", "x-ignorado": "1" } }));
     vi.stubGlobal("fetch", fetchMock);
 
     const request = new Request("http://app.local/api/raiji/rides?x=1", {
@@ -45,7 +45,7 @@ describe("gateway (BFF -> Kong)", () => {
   });
 
   it("GET/HEAD não enviam corpo e 204 responde sem corpo", async () => {
-    const fetchMock = vi.fn(async () => new Response(null, { status: 204 }));
+    const fetchMock = vi.fn(async (_url: string, _init?: RequestInit) => new Response(null, { status: 204 }));
     vi.stubGlobal("fetch", fetchMock);
 
     const response = await forwardToGateway(new Request("http://app.local/api/raiji/rides", { method: "GET" }), "rides");

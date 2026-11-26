@@ -39,10 +39,10 @@ describe("profile / rewards / payments", () => {
 
     backendMock.mockClear();
     await rewards.getRewards();
-    await rewards.creditMockAd("coupon", "tx-1");
+    await rewards.creditMockAd("short", "tx-1");
     expect(backendMock.mock.calls).toEqual([
       ["/api/rewards"],
-      ["/api/rewards/ad-watched", { method: "POST", body: { kind: "coupon", transactionId: "tx-1" } }],
+      ["/api/rewards/ad-watched", { method: "POST", body: { kind: "short", transactionId: "tx-1" } }],
     ]);
 
     backendMock.mockClear();

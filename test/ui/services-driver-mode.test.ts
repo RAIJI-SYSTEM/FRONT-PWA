@@ -236,7 +236,7 @@ describe("rotas publicadas", () => {
     const route = await dm.publishRoute({
       origin: place() as never,
       destination: place({ city: undefined, name: "Campinas", coordinates: [-47, -22.9] }) as never,
-      departureAt: new Date("2026-12-01T10:00:00Z"),
+      departureAt: "2026-12-01T10:00:00",
       vehicleId: "v1",
       seats: 2,
       acceptsPackages: true,
@@ -266,14 +266,14 @@ describe("rotas publicadas", () => {
     await dm.publishRoute({
       origin: place() as never,
       destination: place() as never,
-      departureAt: new Date(),
+      departureAt: new Date().toISOString(),
       vehicleId: "v1",
       directions: { geometry: { type: "LineString", coordinates: [[0, 0], [1, 1]] }, distanceMeters: 1, durationSeconds: 1 },
     });
     expect(drivingRoute).not.toHaveBeenCalled();
 
     drivingRoute.mockRejectedValue(new Error("sem mapa"));
-    await dm.publishRoute({ origin: place() as never, destination: place() as never, departureAt: new Date(), vehicleId: "v1" });
+    await dm.publishRoute({ origin: place() as never, destination: place() as never, departureAt: new Date().toISOString(), vehicleId: "v1" });
     expect(backendMock.mock.calls.at(-1)![1].body.route).toBeUndefined();
   });
 
@@ -286,7 +286,7 @@ describe("rotas publicadas", () => {
     await dm.publishRoute({
       origin: place() as never,
       destination: place() as never,
-      departureAt: new Date(),
+      departureAt: new Date().toISOString(),
       vehicleId: "v1",
       seats: 0,
       acceptsPackages: true,
@@ -299,7 +299,7 @@ describe("rotas publicadas", () => {
     await dm.publishRoute({
       origin: place() as never,
       destination: place() as never,
-      departureAt: new Date(),
+      departureAt: new Date().toISOString(),
       vehicleId: "v1",
       seats: 2,
       acceptsPackages: false,

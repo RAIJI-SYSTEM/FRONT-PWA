@@ -40,7 +40,7 @@ describe("sem token do Mapbox", () => {
 describe("com token do Mapbox", () => {
   it("busca endereços e monta os lugares", async () => {
     const mapbox = await loadMapbox("pk-teste");
-    const fetchMock = vi.fn(async () => ({ ok: true, json: async () => ({ features: [feature()] }) }));
+    const fetchMock = vi.fn(async (_url: string, _init?: RequestInit) => ({ ok: true, json: async () => ({ features: [feature()] }) }));
     vi.stubGlobal("fetch", fetchMock);
 
     await expect(mapbox.searchPlaces("ab")).resolves.toEqual([]); // curto demais
@@ -93,7 +93,7 @@ describe("com token do Mapbox", () => {
   it("traça a rota de carro", async () => {
     const mapbox = await loadMapbox("pk");
     const route = { geometry: { type: "LineString", coordinates: [[0, 0], [1, 1]] }, distance: 100, duration: 60 };
-    const fetchMock = vi.fn(async () => ({ ok: true, json: async () => ({ routes: [route] }) }));
+    const fetchMock = vi.fn(async (_url: string, _init?: RequestInit) => ({ ok: true, json: async () => ({ routes: [route] }) }));
     vi.stubGlobal("fetch", fetchMock);
 
     await expect(mapbox.getDrivingRoute([-46.6, -23.5], [-47, -22.9])).resolves.toEqual({
@@ -115,7 +115,7 @@ describe("com token do Mapbox", () => {
 
   it("searchCities restringe a municípios", async () => {
     const mapbox = await loadMapbox("pk");
-    const fetchMock = vi.fn(async () => ({ ok: true, json: async () => ({ features: [] }) }));
+    const fetchMock = vi.fn(async (_url: string, _init?: RequestInit) => ({ ok: true, json: async () => ({ features: [] }) }));
     vi.stubGlobal("fetch", fetchMock);
     await mapbox.searchCities("Campinas");
     expect(fetchMock.mock.calls[0]![0]).toContain("types=place");
