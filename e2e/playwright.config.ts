@@ -22,7 +22,7 @@ export default defineConfig({
   projects: [
     {
       name: "ui",
-      testMatch: /ui\.spec\.ts/,
+      testMatch: /(ui|pages)\.spec\.ts/,
       use: {
         ...devices["Desktop Chrome"],
         baseURL: FRONT,
