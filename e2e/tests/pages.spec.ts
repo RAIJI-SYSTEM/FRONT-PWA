@@ -1,78 +1,69 @@
-import { test, expect, type Page } from "@playwright/test";
-
-async function login(page: Page) {
-  await page.goto("/login");
-  await page.getByRole("button", { name: /Entrar com e-mail/i }).click();
-  await page.waitForURL(/realms\/raiji\/protocol\/openid-connect\/auth/, { timeout: 30_000 });
-  await page.locator("#username").fill("teste");
-  await page.locator("#password").fill("teste123");
-  await page.locator("#kc-login").click();
-  await page.waitForURL(/\/homepage/, { timeout: 30_000 });
-}
+import { test, expect } from "@playwright/test";
 
 /**
- * Smoke de todas as telas estáticas do PWA autenticado.
- * Valida que cada rota renderiza sem erro de aplicação e sem cair no login.
+ * Uma tela = um teste E2E isolado.
+ *
+ * Valida que a rota renderiza autenticada, não cai no login e não mostra
+ * erro de aplicação. A autenticação é compartilhada via auth.setup.ts.
  */
+const routes = [
+  "/",
+  "/login",
+  "/auth/callback",
+  "/homepage",
+  "/corridas",
+  "/encomendas",
+  "/mais",
+  "/mural",
+  "/notificacoes",
+  "/perfil",
+  "/configuracoes",
+  "/recompensas",
+  "/buscar",
+  "/viagem/nova",
+  "/viagem/busca",
+  "/viagem/pedido",
+  "/viagem/reserva",
+  "/viagem/pagamento",
+  "/viagem/pagamento/status",
+  "/encomenda",
+  "/encomenda/nova",
+  "/encomenda/produto",
+  "/encomenda/pagamento",
+  "/encomenda/pagamento/status",
+  "/mensagens",
+  "/mensagens/conversa",
+  "/motorista",
+  "/motorista/cadastro",
+  "/motorista/pedidos",
+  "/motorista/fretes",
+  "/motorista/rotas",
+  "/motorista/rotas/nova",
+  "/motorista/rotas/gerenciar",
+  "/motorista/perfil",
+  "/motorista/repasses",
+  "/motorista/mensagens",
+  "/motorista/notificacoes",
+  "/motorista/mais",
+  "/empresa",
+  "/empresa/detalhe",
+  "/empresa/frete",
+  "/empresa/frete/novo",
+  "/admin/repasses",
+  "/privacidade",
+  "/termos",
+];
+
 test.describe("FRONT-PWA — todas as telas", () => {
-  test("rotas principais renderizam autenticadas", async ({ page }) => {
-    test.setTimeout(180_000);
-    await login(page);
-
-    const routes = [
-      "/homepage",
-      "/corridas",
-      "/encomendas",
-      "/mais",
-      "/mural",
-      "/notificacoes",
-      "/perfil",
-      "/configuracoes",
-      "/recompensas",
-      "/viagem/nova",
-      "/viagem/busca",
-      "/encomenda/nova",
-      "/encomenda",
-      "/mensagens",
-      "/motorista",
-      "/motorista/pedidos",
-      "/motorista/fretes",
-      "/motorista/rotas",
-      "/motorista/rotas/nova",
-      "/motorista/rotas/gerenciar",
-      "/motorista/perfil",
-      "/motorista/repasses",
-      "/motorista/mensagens",
-      "/motorista/notificacoes",
-      "/motorista/mais",
-      "/empresa",
-      "/empresa/frete",
-      "/admin/repasses",
-      "/",
-      "/auth/callback",
-      "/buscar",
-      "/empresa/detalhe",
-      "/empresa/frete/novo",
-      "/encomenda/pagamento",
-      "/encomenda/pagamento/status",
-      "/encomenda/produto",
-      "/mensagens/conversa",
-      "/motorista/cadastro",
-      "/privacidade",
-      "/termos",
-      "/viagem/pagamento",
-      "/viagem/pagamento/status",
-      "/viagem/pedido",
-      "/viagem/reserva",
-    ];
-
-    for (const route of routes) {
+  for (const route of routes) {
+    test(`tela ${route}`, async ({ page }) => {
       const response = await page.goto(route, { waitUntil: "domcontentloaded" });
+
       expect(response?.status() ?? 200, `status de ${route}`).toBeLessThan(500);
-      await expect(page, `rota ${route} não deve cair no login`).not.toHaveURL(/\/login/);
+      await expect(page, `${route} não deve cair no login`).not.toHaveURL(/\/login/);
       await expect(page.locator("body"), `erro visível em ${route}`).not.toContainText(
         /Application error|Internal Server Error|Unhandled Runtime Error/i,
       );
-    }
-  });
+    });
+  }
 });

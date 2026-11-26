@@ -1,6 +1,8 @@
+import { fileURLToPath } from "node:url";
 import { defineConfig, devices } from "@playwright/test";
 
 const FRONT = process.env.FRONT_URL ?? "http://localhost:3000";
+const AUTH_FILE = fileURLToPath(new URL("./.auth/user.json", import.meta.url));
 
 /**
  * E2E do FRONT-PWA.
@@ -21,13 +23,30 @@ export default defineConfig({
   reporter: [["list"], ["html", { open: "never" }]],
   projects: [
     {
+      name: "setup",
+      testMatch: /auth\.setup\.ts/,
+      use: { baseURL: FRONT },
+    },
+    {
       name: "ui",
-      testMatch: /(ui|pages)\.spec\.ts/,
+      testMatch: /ui\.spec\.ts/,
       use: {
         ...devices["Desktop Chrome"],
         baseURL: FRONT,
         trace: "retain-on-failure",
         video: "retain-on-failure",
+        screenshot: "only-on-failure",
+      },
+    },
+    {
+      name: "pages",
+      testMatch: /pages\.spec\.ts/,
+      dependencies: ["setup"],
+      use: {
+        ...devices["Desktop Chrome"],
+        baseURL: FRONT,
+        storageState: AUTH_FILE,
+        trace: "retain-on-failure",
         screenshot: "only-on-failure",
       },
     },
