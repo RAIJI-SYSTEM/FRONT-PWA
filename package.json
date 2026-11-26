@@ -10,6 +10,7 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "coverage": "vitest run --coverage",
+    "mutation": "stryker run",
     "dev:lan": "next dev -H 0.0.0.0",
     "build:mobile": "BUILD_TARGET=mobile next build && next typegen && cap sync android",
     "android": "CAPACITOR_ANDROID_STUDIO_PATH=${CAPACITOR_ANDROID_STUDIO_PATH:-/opt/android-studio/bin/studio.sh} cap open android"
@@ -38,6 +39,8 @@
   },
   "devDependencies": {
     "@capacitor/cli": "^8.5.3",
+    "@stryker-mutator/core": "^10.1.1",
+    "@stryker-mutator/vitest-runner": "^10.1.1",
     "@tailwindcss/postcss": "^4",
     "@testing-library/dom": "^10.4.2",
     "@testing-library/jest-dom": "^8.0.0",
