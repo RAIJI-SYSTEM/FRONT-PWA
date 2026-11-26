@@ -48,6 +48,22 @@ test.describe("FRONT-PWA — todas as telas", () => {
       "/empresa",
       "/empresa/frete",
       "/admin/repasses",
+      "/",
+      "/auth/callback",
+      "/buscar",
+      "/empresa/detalhe",
+      "/empresa/frete/novo",
+      "/encomenda/pagamento",
+      "/encomenda/pagamento/status",
+      "/encomenda/produto",
+      "/mensagens/conversa",
+      "/motorista/cadastro",
+      "/privacidade",
+      "/termos",
+      "/viagem/pagamento",
+      "/viagem/pagamento/status",
+      "/viagem/pedido",
+      "/viagem/reserva",
     ];
 
     for (const route of routes) {
