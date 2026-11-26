@@ -13,7 +13,8 @@
     "mutation": "stryker run",
     "dev:lan": "next dev -H 0.0.0.0",
     "build:mobile": "BUILD_TARGET=mobile next build && next typegen && cap sync android",
-    "android": "CAPACITOR_ANDROID_STUDIO_PATH=${CAPACITOR_ANDROID_STUDIO_PATH:-/opt/android-studio/bin/studio.sh} cap open android"
+    "android": "CAPACITOR_ANDROID_STUDIO_PATH=${CAPACITOR_ANDROID_STUDIO_PATH:-/opt/android-studio/bin/studio.sh} cap open android",
+    "test:report": "bash scripts/run-all-tests.sh"
   },
   "dependencies": {
     "@capacitor-community/admob": "^8.2.1",
