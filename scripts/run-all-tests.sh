@@ -51,6 +51,20 @@ else
 fi
 
 python3 "$ROOT/scripts/reporting/build_index.py" "$OUT" vitest
+
+# --- Locust: carga, escalabilidade e monitoramento ---------------------------
+if [ "${RUN_LOAD:-1}" = "1" ] && curl -fsS --max-time 3 http://localhost:3000/ >/dev/null 2>&1; then
+  LOAD_DIR="$ROOT/load-tests"
+  if [ ! -x "$LOAD_DIR/.venv/bin/locust" ]; then
+    (cd "$LOAD_DIR" && ./run.sh deps) > "$LOGS/04-locust-deps.log" 2>&1 || status=1
+  fi
+  (cd "$LOAD_DIR" && LOAD_USERS="${LOAD_USERS:-3}" LOAD_SPAWN="${LOAD_SPAWN:-1}" SMOKE_HOLD="${SMOKE_HOLD:-5}" ./run.sh smoke) > "$LOGS/04-locust-carga.log" 2>&1 || status=1
+  (cd "$LOAD_DIR" && N_LIST=1 USERS="${SCALE_USERS:-2}" HOLD="${SCALE_HOLD:-3}" ./run-scale.sh) > "$LOGS/04-locust-escala.log" 2>&1 || status=1
+  echo "Mensageria não se aplica ao FRONT-PWA (não há consumer AMQP neste serviço)." > "$LOGS/04-locust-mensageria.log"
+else
+  echo "Locust ignorado: front não está em http://localhost:3000" > "$LOGS/04-locust.log"
+fi
+
 python3 "$ROOT/scripts/reporting/organize_reports.py" "$ROOT" "front-pwa"
 
 echo

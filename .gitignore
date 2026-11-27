@@ -50,3 +50,7 @@ users.csv
 reports/
 __pycache__/
 *.pyc
+
+# Resultados gerados pelos testes de carga
+load-tests/scale-results.json
+.stryker-tmp/
