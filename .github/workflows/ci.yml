@@ -1,0 +1,377 @@
+# =============================================================================
+# CI do FRONT-PWA — tudo em jobs paralelos (fail-fast: false):
+#   1. coverage  -> Vitest + cobertura V8
+#   2. mutation  -> StrykerJS
+#   3. e2e       -> Playwright (build de produção do Next + stack completa)
+#   4. load      -> Locust: smoke, stress e escalabilidade 1xN
+#
+# Os jobs de E2E e carga sobem a stack real a partir do repositório do monólito
+# (Kong, Keycloak, RabbitMQ, monólito e chat) e rodam o front com `next start`.
+# =============================================================================
+name: CI
+
+on:
+  pull_request:
+  push:
+    branches: [main, develop]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Cobertura (Vitest + V8)
+  # ---------------------------------------------------------------------------
+  coverage:
+    name: Cobertura (Vitest/V8)
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Vitest + cobertura
+        run: |
+          mkdir -p reports/testes
+          npx vitest run --coverage --reporter=json --outputFile=reports/testes/vitest.json
+
+      - name: Gerar relatório HTML consolidado
+        run: python3 scripts/reporting/generate_vitest_report.py reports/testes
+
+      - name: Upload cobertura
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: front-coverage
+          path: |
+            coverage/
+            reports/testes/
+          if-no-files-found: ignore
+          retention-days: 14
+
+  # ---------------------------------------------------------------------------
+  # Mutação (StrykerJS)
+  # ---------------------------------------------------------------------------
+  mutation:
+    name: Mutação (StrykerJS)
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Stryker
+        run: npm run mutation
+
+      - name: Upload relatório de mutação
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: front-mutation
+          path: reports/mutation/
+          if-no-files-found: ignore
+          retention-days: 14
+
+  # ---------------------------------------------------------------------------
+  # E2E (Playwright) — front em build de produção + stack completa
+  # ---------------------------------------------------------------------------
+  e2e:
+    name: E2E (Playwright · Next build + stack)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      COMPOSE_PROJECT_NAME: avxae-core-monolith
+      RAIJI_GATEWAY_URL: http://localhost:8000
+      FRONT_URL: http://localhost:3000
+      KONG_URL: http://localhost:8000
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Clonar monólito e chat (stack)
+        run: |
+          BRANCH="${GITHUB_HEAD_REF:-${GITHUB_REF_NAME}}"
+          for repo in AVXAE-CORE-MONOLITH MESSAGE-SERVICE; do
+            dir="$RUNNER_TEMP/$(echo "$repo" | tr '[:upper:]' '[:lower:]')"
+            git clone --depth 1 --branch "$BRANCH" \
+              "https://github.com/RAIJI-SYSTEM/${repo}.git" "$dir" \
+              || git clone --depth 1 "https://github.com/RAIJI-SYSTEM/${repo}.git" "$dir"
+          done
+
+      - name: Subir stack completa
+        env:
+          CHAT_CONTEXT: ${{ runner.temp }}/message-service
+        run: >
+          docker compose --project-directory "$RUNNER_TEMP/avxae-core-monolith"
+          -f "$RUNNER_TEMP/avxae-core-monolith/docker-compose.yml"
+          --profile chat up -d --build
+
+      - name: Aguardar monólito e chat
+        run: |
+          set -uo pipefail
+          ok=0
+          for _ in $(seq 1 120); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8000/actuator/health || true)
+            if [ "$code" = "200" ]; then ok=1; break; fi
+            sleep 5
+          done
+          if [ "$ok" != "1" ]; then
+            echo "Monólito não respondeu em http://localhost:8000/actuator/health"
+            docker compose --project-directory "$RUNNER_TEMP/avxae-core-monolith" \
+              -f "$RUNNER_TEMP/avxae-core-monolith/docker-compose.yml" --profile chat ps
+            exit 1
+          fi
+          for _ in $(seq 1 60); do
+            [ "$(docker inspect -f '{{.State.Health.Status}}' raiji-chat 2>/dev/null || true)" = "healthy" ] && break
+            sleep 5
+          done
+          status=$(docker inspect -f '{{.State.Health.Status}}' raiji-chat 2>/dev/null || true)
+          echo "chat: ${status:-desconhecido}"
+          [ "$status" = "healthy" ]
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Instalar dependências e build de produção
+        run: |
+          npm ci
+          npm run build
+
+      - name: Subir front (next start)
+        run: |
+          nohup npm start > "$RUNNER_TEMP/front.log" 2>&1 &
+          echo $! > "$RUNNER_TEMP/front.pid"
+          for _ in $(seq 1 90); do
+            curl -sf http://localhost:3000/ >/dev/null 2>&1 && exit 0
+            sleep 2
+          done
+          cat "$RUNNER_TEMP/front.log"
+          exit 1
+
+      - name: Instalar Playwright
+        working-directory: e2e
+        run: |
+          npm install --no-audit --no-fund
+          npx playwright install --with-deps chromium
+
+      - name: Executar E2E
+        working-directory: e2e
+        run: npx playwright test --reporter=list,html
+
+      - name: Logs (em caso de falha)
+        if: failure()
+        run: |
+          cat "$RUNNER_TEMP/front.log" 2>/dev/null || true
+          docker compose --project-directory "$RUNNER_TEMP/avxae-core-monolith" \
+            -f "$RUNNER_TEMP/avxae-core-monolith/docker-compose.yml" --profile chat logs --tail=250
+
+      - name: Upload relatório Playwright
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: front-e2e
+          path: e2e/playwright-report/
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Derrubar tudo
+        if: always()
+        run: |
+          [ -f "$RUNNER_TEMP/front.pid" ] && kill "$(cat "$RUNNER_TEMP/front.pid")" 2>/dev/null || true
+          docker compose --project-directory "$RUNNER_TEMP/avxae-core-monolith" \
+            -f "$RUNNER_TEMP/avxae-core-monolith/docker-compose.yml" --profile chat down -v --remove-orphans
+
+  # ---------------------------------------------------------------------------
+  # Carga (Locust) — smoke, stress e escalabilidade 1xN
+  # ---------------------------------------------------------------------------
+  load:
+    name: Carga (Locust · stress · 1xN)
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    env:
+      COMPOSE_PROJECT_NAME: avxae-core-monolith
+      RAIJI_GATEWAY_URL: http://localhost:8000
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Clonar monólito e chat (stack)
+        run: |
+          BRANCH="${GITHUB_HEAD_REF:-${GITHUB_REF_NAME}}"
+          for repo in AVXAE-CORE-MONOLITH MESSAGE-SERVICE; do
+            dir="$RUNNER_TEMP/$(echo "$repo" | tr '[:upper:]' '[:lower:]')"
+            git clone --depth 1 --branch "$BRANCH" \
+              "https://github.com/RAIJI-SYSTEM/${repo}.git" "$dir" \
+              || git clone --depth 1 "https://github.com/RAIJI-SYSTEM/${repo}.git" "$dir"
+          done
+
+      - name: Subir stack completa
+        env:
+          CHAT_CONTEXT: ${{ runner.temp }}/message-service
+        run: >
+          docker compose --project-directory "$RUNNER_TEMP/avxae-core-monolith"
+          -f "$RUNNER_TEMP/avxae-core-monolith/docker-compose.yml"
+          --profile chat up -d --build
+
+      - name: Aguardar monólito e chat
+        run: |
+          set -uo pipefail
+          ok=0
+          for _ in $(seq 1 120); do
+            code=$(curl -s -o /dev/null -w '%{http_code}' http://localhost:8000/actuator/health || true)
+            if [ "$code" = "200" ]; then ok=1; break; fi
+            sleep 5
+          done
+          if [ "$ok" != "1" ]; then
+            docker compose --project-directory "$RUNNER_TEMP/avxae-core-monolith" \
+              -f "$RUNNER_TEMP/avxae-core-monolith/docker-compose.yml" --profile chat ps
+            exit 1
+          fi
+          for _ in $(seq 1 60); do
+            [ "$(docker inspect -f '{{.State.Health.Status}}' raiji-chat 2>/dev/null || true)" = "healthy" ] && break
+            sleep 5
+          done
+          [ "$(docker inspect -f '{{.State.Health.Status}}' raiji-chat 2>/dev/null || true)" = "healthy" ]
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Instalar dependências e build de produção
+        run: |
+          npm ci
+          npm run build
+
+      - name: Subir front (next start)
+        run: |
+          nohup npm start > "$RUNNER_TEMP/front.log" 2>&1 &
+          echo $! > "$RUNNER_TEMP/front.pid"
+          for _ in $(seq 1 90); do
+            curl -sf http://localhost:3000/ >/dev/null 2>&1 && exit 0
+            sleep 2
+          done
+          cat "$RUNNER_TEMP/front.log"
+          exit 1
+
+      - name: Setup Python (Locust)
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Instalar Locust
+        working-directory: load-tests
+        run: ./run.sh deps
+
+      - name: Carga — smoke
+        working-directory: load-tests
+        env:
+          LOAD_USERS: "10"
+          LOAD_SPAWN: "5"
+          SMOKE_HOLD: "15"
+          ANNOTATE: "0"
+        run: ./run.sh smoke
+
+      - name: Carga — stress (degraus reduzidos)
+        working-directory: load-tests
+        env:
+          LOAD_USERS: "15"
+          LOAD_START: "5"
+          LOAD_STEP: "5"
+          LOAD_STEP_TIME: "2"
+          LOAD_SPAWN: "5"
+          ANNOTATE: "0"
+        run: ./run.sh stress
+
+      - name: Escalabilidade 1xN (N=1 e N=2)
+        working-directory: load-tests
+        env:
+          N_LIST: "1 2"
+          USERS: "5"
+          HOLD: "5"
+          ANNOTATE: "0"
+        run: ./run-scale.sh
+
+      - name: Logs (em caso de falha)
+        if: failure()
+        run: |
+          cat "$RUNNER_TEMP/front.log" 2>/dev/null || true
+          docker compose --project-directory "$RUNNER_TEMP/avxae-core-monolith" \
+            -f "$RUNNER_TEMP/avxae-core-monolith/docker-compose.yml" --profile chat logs --tail=250
+
+      - name: Upload relatórios Locust
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: front-locust
+          path: |
+            load-tests/reports/
+            load-tests/scale-results.json
+          if-no-files-found: ignore
+          retention-days: 14
+
+      - name: Derrubar tudo
+        if: always()
+        run: |
+          [ -f "$RUNNER_TEMP/front.pid" ] && kill "$(cat "$RUNNER_TEMP/front.pid")" 2>/dev/null || true
+          docker compose --project-directory "$RUNNER_TEMP/avxae-core-monolith" \
+            -f "$RUNNER_TEMP/avxae-core-monolith/docker-compose.yml" --profile chat down -v --remove-orphans
+
+  # ---------------------------------------------------------------------------
+  # Regressão — quebra proposital em worktree temporária + métricas formais.
+  # ---------------------------------------------------------------------------
+  regression:
+    name: Regressão (quebra proposital)
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+
+      - name: Instalar dependências
+        run: npm ci
+
+      - name: Quebra controlada + suíte de regressão
+        run: python3 scripts/evidence/regression_drill.py front-pwa
+
+      - name: Upload evidência da regressão
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: front-regression
+          path: reports/drills/
+          if-no-files-found: ignore
+          retention-days: 14
