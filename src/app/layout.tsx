@@ -3,6 +3,7 @@ import { AppRouterCacheProvider } from '@mui/material-nextjs/v15-appRouter';
 import { ThemeProvider } from '@mui/material/styles';
 import CssBaseline from '@mui/material/CssBaseline';
 import InitColorSchemeScript from '@mui/material/InitColorSchemeScript';
+import { AuditTracker } from '@/components/AuditTracker';
 import theme from '@/theme'; 
 import { Outfit } from 'next/font/google';
 
@@ -26,6 +27,7 @@ export default function RootLayout({
         <AppRouterCacheProvider>
           <ThemeProvider theme={theme}>
             <CssBaseline />
+            <AuditTracker />
             {children}
           </ThemeProvider>
         </AppRouterCacheProvider>

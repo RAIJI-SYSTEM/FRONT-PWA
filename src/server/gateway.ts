@@ -1,3 +1,5 @@
+import { decodeJwtSub, logAudit, requestIdFrom, requestIp } from './audit';
+
 /**
  * BFF -> Kong. O navegador/app fala só com este servidor Next (mesma origem na web; no
  * Android, o NEXT_PUBLIC_API_URL), e este servidor chama o Kong. Assim, no deploy, não há
@@ -9,12 +11,25 @@
 export const GATEWAY_URL = (process.env.RAIJI_GATEWAY_URL ?? 'http://localhost:8000').replace(/\/$/, '');
 
 /** Cabeçalhos que passam do app para o Kong (o resto, como cookies e Origin, fica no BFF) */
-const FORWARD_REQUEST_HEADERS = ['authorization', 'content-type', 'accept', 'accept-language', 'idempotency-key'];
+const FORWARD_REQUEST_HEADERS = [
+  'authorization',
+  'content-type',
+  'accept',
+  'accept-language',
+  'idempotency-key',
+  'x-request-id',
+];
 /** Cabeçalhos da resposta do Kong que voltam para o app */
 const FORWARD_RESPONSE_HEADERS = ['content-type', 'content-disposition', 'cache-control', 'location', 'retry-after'];
 
 /** Repassa a requisição para `${GATEWAY_URL}${targetPath}` e devolve a resposta como veio. */
 export async function forwardToGateway(request: Request, targetPath: string): Promise<Response> {
+  const startedAt = Date.now();
+  const requestId = requestIdFrom(request.headers);
+  const actorSub = decodeJwtSub(request.headers.get('authorization'));
+  const ip = requestIp(request.headers);
+  const userAgent = request.headers.get('user-agent');
+
   const incoming = new URL(request.url);
   const url = `${GATEWAY_URL}${targetPath}${incoming.search}`;
 
@@ -23,6 +38,8 @@ export async function forwardToGateway(request: Request, targetPath: string): Pr
     const value = request.headers.get(name);
     if (value) headers.set(name, value);
   }
+  // Garante correlação front -> Kong -> monólito/chat mesmo se o cliente não mandou.
+  headers.set('x-request-id', requestId);
 
   const hasBody = request.method !== 'GET' && request.method !== 'HEAD';
   let upstream: Response;
@@ -35,8 +52,31 @@ export async function forwardToGateway(request: Request, targetPath: string): Pr
       cache: 'no-store',
     });
   } catch {
+    logAudit({
+      event: 'bff_request',
+      requestId,
+      method: request.method,
+      path: targetPath,
+      status: 502,
+      durationMs: Date.now() - startedAt,
+      actorSub,
+      ip,
+      userAgent,
+    });
     return Response.json({ message: 'O servidor Raiji está fora do ar. Tente de novo em instantes.' }, { status: 502 });
   }
+
+  logAudit({
+    event: 'bff_request',
+    requestId,
+    method: request.method,
+    path: targetPath,
+    status: upstream.status,
+    durationMs: Date.now() - startedAt,
+    actorSub,
+    ip,
+    userAgent,
+  });
 
   const responseHeaders = new Headers();
   for (const name of FORWARD_RESPONSE_HEADERS) {

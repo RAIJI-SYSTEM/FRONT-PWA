@@ -185,6 +185,13 @@ jobs:
         working-directory: e2e
         run: npx playwright test --reporter=list,html
 
+      - name: Validar auditoria do front (BFF com ator)
+        run: |
+          grep -q '"service":"front-pwa"' "$RUNNER_TEMP/front.log"
+          grep -q '"event":"bff_request"' "$RUNNER_TEMP/front.log"
+          grep -q '"event":"page_view"' "$RUNNER_TEMP/front.log"
+          echo "front audit OK"
+
       - name: Logs (em caso de falha)
         if: failure()
         run: |
