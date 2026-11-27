@@ -1,5 +1,5 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { decodeJwtSub, logAudit, requestIdFrom, requestIp } from './server/audit';
+import { decodeJwtActor, logAudit, requestIdFrom, requestIp } from './server/audit';
 
 /**
  * CORS das rotas /api: o app Android (Capacitor) roda em http://localhost e chama este
@@ -32,7 +32,8 @@ export function proxy(request: NextRequest) {
       requestId,
       method: request.method,
       path: request.nextUrl.pathname,
-      actorSub: decodeJwtSub(request.headers.get('authorization')),
+      actorSub: decodeJwtActor(request.headers.get('authorization')).sub,
+      actorUsername: decodeJwtActor(request.headers.get('authorization')).username,
       ip: requestIp(headers),
       userAgent: headers.get('user-agent'),
     });

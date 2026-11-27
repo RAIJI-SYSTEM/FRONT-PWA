@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { decodeJwtSub, logAudit, requestIdFrom, requestIp } from "@/server/audit";
+import { decodeJwtActor, decodeJwtSub, logAudit, requestIdFrom, requestIp } from "@/server/audit";
 
 function token(payload: Record<string, unknown>): string {
   const header = Buffer.from(JSON.stringify({ alg: "none" })).toString("base64url");
@@ -10,7 +10,17 @@ function token(payload: Record<string, unknown>): string {
 describe("auditoria do front", () => {
   afterEach(() => vi.restoreAllMocks());
 
-  it("extrai o sub do JWT sem validar assinatura", () => {
+  it("extrai sub e username do JWT sem validar assinatura", () => {
+    expect(decodeJwtActor(`Bearer ${token({ sub: "user-1", preferred_username: "maria" })}`)).toEqual({
+      sub: "user-1",
+      username: "maria",
+    });
+    expect(decodeJwtActor(`Bearer ${token({ sub: "user-1", email: "maria@raiji.local" })}`)).toEqual({
+      sub: "user-1",
+      username: "maria@raiji.local",
+    });
+    expect(decodeJwtActor(null)).toEqual({ sub: null, username: null });
+
     expect(decodeJwtSub(`Bearer ${token({ sub: "user-1" })}`)).toBe("user-1");
     expect(decodeJwtSub(`bearer ${token({ sub: "user-2", name: "João" })}`)).toBe("user-2");
     expect(decodeJwtSub(null)).toBeNull();

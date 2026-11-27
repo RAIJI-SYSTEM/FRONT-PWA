@@ -1,4 +1,4 @@
-import { decodeJwtSub, logAudit, requestIdFrom, requestIp } from '@/server/audit';
+import { decodeJwtActor, logAudit, requestIdFrom, requestIp } from '@/server/audit';
 
 /**
  * Recebe o beacon de navegação client-side e grava no stdout.
@@ -15,7 +15,8 @@ export async function POST(request: Request) {
     path,
     status: 204,
     durationMs: 0,
-    actorSub: decodeJwtSub(request.headers.get('authorization')),
+    actorSub: decodeJwtActor(request.headers.get('authorization')).sub,
+    actorUsername: decodeJwtActor(request.headers.get('authorization')).username,
     ip: requestIp(request.headers),
     userAgent: request.headers.get('user-agent'),
   });

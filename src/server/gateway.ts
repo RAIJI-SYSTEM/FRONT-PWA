@@ -1,4 +1,4 @@
-import { decodeJwtSub, logAudit, requestIdFrom, requestIp } from './audit';
+import { decodeJwtActor, logAudit, requestIdFrom, requestIp } from './audit';
 
 /**
  * BFF -> Kong. O navegador/app fala só com este servidor Next (mesma origem na web; no
@@ -26,7 +26,7 @@ const FORWARD_RESPONSE_HEADERS = ['content-type', 'content-disposition', 'cache-
 export async function forwardToGateway(request: Request, targetPath: string): Promise<Response> {
   const startedAt = Date.now();
   const requestId = requestIdFrom(request.headers);
-  const actorSub = decodeJwtSub(request.headers.get('authorization'));
+  const actor = decodeJwtActor(request.headers.get('authorization'));
   const ip = requestIp(request.headers);
   const userAgent = request.headers.get('user-agent');
 
@@ -59,7 +59,8 @@ export async function forwardToGateway(request: Request, targetPath: string): Pr
       path: targetPath,
       status: 502,
       durationMs: Date.now() - startedAt,
-      actorSub,
+      actorSub: actor.sub,
+      actorUsername: actor.username,
       ip,
       userAgent,
     });
@@ -73,7 +74,8 @@ export async function forwardToGateway(request: Request, targetPath: string): Pr
     path: targetPath,
     status: upstream.status,
     durationMs: Date.now() - startedAt,
-    actorSub,
+    actorSub: actor.sub,
+    actorUsername: actor.username,
     ip,
     userAgent,
   });
